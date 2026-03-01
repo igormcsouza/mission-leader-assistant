@@ -11,6 +11,7 @@ DATA_FILE = "calendar_data.json"
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 MAX_DISPLAY_WEEKS = 6
 MAX_OCCURRENCES = 5
+MAX_SLOTS = 2
 
 
 def load_entries():
@@ -26,7 +27,28 @@ def load_entries():
     if not isinstance(raw, dict):
         return {}
 
-    return {str(k): str(v) for k, v in raw.items()}
+    entries = {}
+    for key, value in raw.items():
+        if not isinstance(key, str):
+            continue
+        if isinstance(value, str):
+            entries[key] = value
+    return entries
+
+
+def get_cell_names(entries, occurrence, day_of_week):
+    if not occurrence:
+        return {"first": "", "second": ""}
+
+    base_key = f"{occurrence}:{day_of_week}"
+    first = entries.get(f"{base_key}:1", "")
+    second = entries.get(f"{base_key}:2", "")
+
+    # Backward compatibility for old single-value data.
+    if not first and not second:
+        first = entries.get(base_key, "")
+
+    return {"first": first, "second": second}
 
 
 def save_entries(entries):
@@ -69,12 +91,11 @@ def build_calendar_payload(year, month, entries):
             day_data = day_lookup.get((week_number, day_name))
             day_number = day_data["day_number"] if day_data else None
             occurrence = day_data["occurrence"] if day_data else None
-            key = f"{occurrence}:{day_name}" if occurrence else None
             if day_name == "Monday":
-                name = "PDAY"
+                names = {"first": "PDAY", "second": ""}
                 editable = False
             else:
-                name = entries.get(key, "") if key else ""
+                names = get_cell_names(entries, occurrence, day_name)
                 editable = True
 
             cells.append(
@@ -83,7 +104,8 @@ def build_calendar_payload(year, month, entries):
                     "day_of_week": day_name,
                     "day_number": day_number,
                     "occurrence": occurrence,
-                    "name": name,
+                    "name": names["first"],
+                    "names": names,
                     "editable": editable,
                 }
             )
@@ -164,6 +186,7 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
         day_of_week = str(data.get("day_of_week", "")).strip()
         occurrence = data.get("occurrence")
+        slot = data.get("slot", 1)
         name = str(data.get("name", "")).strip()
 
         if day_of_week not in DAYS:
@@ -178,12 +201,19 @@ class CalendarHandler(BaseHTTPRequestHandler):
             self.send_json(400, {"status": "error", "error": "occurrence must be between 1 and 5"})
             return
 
+        if not isinstance(slot, int) or slot < 1 or slot > MAX_SLOTS:
+            self.send_json(400, {"status": "error", "error": "slot must be between 1 and 2"})
+            return
+
         entries = load_entries()
-        key = f"{occurrence}:{day_of_week}"
+        base_key = f"{occurrence}:{day_of_week}"
+        key = f"{base_key}:{slot}"
         if name:
             entries[key] = name
         else:
             entries.pop(key, None)
+        # Migrate legacy key once any slot is edited.
+        entries.pop(base_key, None)
         save_entries(entries)
 
         self.send_json(
@@ -193,6 +223,7 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 "saved": {
                     "occurrence": occurrence,
                     "day_of_week": day_of_week,
+                    "slot": slot,
                     "name": name,
                 },
             },

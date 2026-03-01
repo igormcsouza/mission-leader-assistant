@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Calendar Creator</title>
+    <title>Missionary Lunch Calendar</title>
     <style>
       :root {
-        --bg: #f5f7fb;
-        --panel: #ffffff;
-        --line: #d4dde8;
-        --ink: #1a2433;
-        --accent: #0f7b6c;
-        --subtle: #6b7a90;
+        --bg: #0c121b;
+        --panel: #131c28;
+        --line: #2a394b;
+        --ink: #e6edf6;
+        --accent: #3bc8b4;
+        --subtle: #9cb1c9;
       }
 
       * {
@@ -21,7 +21,7 @@
       body {
         margin: 0;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: radial-gradient(circle at top, #eef5ff 0%, var(--bg) 40%, #ecf2fb 100%);
+        background: radial-gradient(circle at top, #142133 0%, var(--bg) 42%, #0a1018 100%);
         color: var(--ink);
       }
 
@@ -38,7 +38,7 @@
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 14px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
         padding: 20px;
       }
 
@@ -78,6 +78,8 @@
         border-radius: 8px;
         padding: 8px 10px;
         font-size: 0.95rem;
+        background: #0f1823;
+        color: var(--ink);
       }
 
       table {
@@ -88,7 +90,7 @@
 
       thead th {
         border: 1px solid var(--line);
-        background: #eff4fa;
+        background: #1a2534;
         padding: 10px 8px;
         text-align: left;
         font-size: 0.92rem;
@@ -111,7 +113,7 @@
         vertical-align: middle;
         font-weight: 700;
         color: var(--subtle);
-        background: #f6f9fd;
+        background: #172231;
         padding: 0;
       }
 
@@ -124,9 +126,16 @@
 
       .meta {
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
+        align-items: center;
         font-size: 0.85rem;
         color: var(--subtle);
+      }
+
+      .meta-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
       }
 
       .name-input {
@@ -135,12 +144,120 @@
         border-radius: 8px;
         padding: 7px 8px;
         font-size: 0.95rem;
+        background: #0f1823;
+        color: var(--ink);
+      }
+
+      .name-input.secondary {
+        margin-top: 4px;
+      }
+
+      .editable-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .pday-toggle {
+        width: 18px;
+        height: 18px;
+        border: 1px solid #4f667f;
+        border-radius: 6px;
+        background: #1a2737;
+        color: #cad8ea;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+        flex-shrink: 0;
+      }
+
+      .mute-toggle {
+        width: 18px;
+        height: 18px;
+        border: 1px solid #4f667f;
+        border-radius: 6px;
+        background: #1a2737;
+        color: #cad8ea;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+        flex-shrink: 0;
+      }
+
+      .cell:hover .pday-toggle,
+      .cell.pday-active .pday-toggle {
+        opacity: 1;
+      }
+
+      .cell:hover .mute-toggle,
+      .cell.muted-active .mute-toggle {
+        opacity: 1;
+      }
+
+      .cell.pday-active .pday-toggle {
+        border-color: #0f7b6c;
+        color: #0f7b6c;
+      }
+
+      .cell.muted-active .mute-toggle {
+        border-color: #6b7687;
+        color: #ffffff;
+        background: #6b7687;
+      }
+
+      .cell.muted-active .pday-toggle {
+        opacity: 0.25;
+        pointer-events: none;
+      }
+
+      .cell.muted-active {
+        background: #2a313d;
+        border-radius: 8px;
+        padding: 2px 4px 4px;
+      }
+
+      .cell.muted-active .name-input,
+      .cell.muted-active .fixed-name,
+      .cell.muted-active .monday-preview,
+      .cell.muted-active .empty-day {
+        opacity: 0.55;
+      }
+
+      .pday-label {
+        display: none;
+      }
+
+      .cell.pday-active .pday-label {
+        display: block;
+      }
+
+      .cell.pday-active .editable-content {
+        display: none;
       }
 
       .fixed-name {
         margin-top: auto;
         font-weight: 700;
         color: var(--accent);
+      }
+
+      .monday-preview {
+        margin-top: auto;
+        font-weight: 700;
+        color: #1a2433;
+        display: none;
       }
 
       .empty-day {
@@ -165,7 +282,7 @@
         height: 38px;
         border: 1px solid var(--line);
         border-radius: 10px;
-        background: #ffffff;
+        background: #192636;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -173,14 +290,14 @@
       }
 
       .icon-btn:hover {
-        border-color: #afbed1;
-        background: #f7fbff;
+        border-color: #607792;
+        background: #213248;
       }
 
       .icon-btn svg {
         width: 20px;
         height: 20px;
-        stroke: #2f3f55;
+        stroke: #d9e5f5;
       }
 
       @media (max-width: 900px) {
@@ -217,8 +334,8 @@
       <main class="calendar-wrap">
         <div class="topbar">
           <div>
-            <h1 class="title">Calendar Creator</h1>
-            <p class="subtitle">Monday is fixed to PDAY. Other cells are persisted by occurrence + day of week.</p>
+            <h1 class="title">Missionary Lunch Calendar</h1>
+            <p class="subtitle">Add the name of the families on the boxes below on the use to day of the week the family gives Lunch to the Missionaries</p>
           </div>
           <div class="selector">
             <label for="monthPicker">Month / Year</label>
@@ -248,12 +365,15 @@
 
     <script>
       const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const EXPORT_DAYS_PT = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
       const headerRow = document.getElementById("headerRow");
       const calendarBody = document.getElementById("calendarBody");
       const monthPicker = document.getElementById("monthPicker");
       const statusEl = document.getElementById("status");
       const statusTextEl = document.getElementById("statusText");
       const downloadBtn = document.getElementById("downloadBtn");
+      const pdayOverrides = {};
+      const mutedDaysByWeek = {};
 
       function showStatus(message, isError = false) {
         statusTextEl.textContent = message;
@@ -281,7 +401,7 @@
         }
       }
 
-      async function saveCell(occurrence, dayOfWeek, nameValue) {
+      async function saveCell(occurrence, dayOfWeek, slot, nameValue) {
         try {
           const response = await fetch("/api/calendar", {
             method: "POST",
@@ -289,6 +409,7 @@
             body: JSON.stringify({
               occurrence: occurrence,
               day_of_week: dayOfWeek,
+              slot: slot,
               name: nameValue,
             }),
           });
@@ -299,7 +420,7 @@
             return;
           }
 
-          showStatus(`Saved ${dayOfWeek} (${occurrence}${ordinalSuffix(occurrence)} occurrence) as "${nameValue || ""}"`);
+          showStatus(`Saved ${dayOfWeek} (${occurrence}${ordinalSuffix(occurrence)} occurrence, box ${slot}) as "${nameValue || ""}"`);
         } catch (error) {
           showStatus("Network error while saving", true);
         }
@@ -313,11 +434,108 @@
         return "th";
       }
 
+      function setPdayOverride(weekNumber, dayOfWeek) {
+        const mutedDays = mutedDaysByWeek[weekNumber] || {};
+        if (mutedDays[dayOfWeek]) {
+          return;
+        }
+
+        if (dayOfWeek === "Monday") {
+          delete pdayOverrides[weekNumber];
+        } else {
+          pdayOverrides[weekNumber] = dayOfWeek;
+        }
+        applyPdayOverridesView();
+      }
+
+      function toggleMuteDay(weekNumber, dayOfWeek) {
+        if (!mutedDaysByWeek[weekNumber]) {
+          mutedDaysByWeek[weekNumber] = {};
+        }
+        mutedDaysByWeek[weekNumber][dayOfWeek] = !mutedDaysByWeek[weekNumber][dayOfWeek];
+        if (!mutedDaysByWeek[weekNumber][dayOfWeek]) {
+          delete mutedDaysByWeek[weekNumber][dayOfWeek];
+        }
+        if (Object.keys(mutedDaysByWeek[weekNumber]).length === 0) {
+          delete mutedDaysByWeek[weekNumber];
+        }
+        if (mutedDaysByWeek[weekNumber]?.[dayOfWeek] && pdayOverrides[weekNumber] === dayOfWeek) {
+          delete pdayOverrides[weekNumber];
+        }
+        applyPdayOverridesView();
+      }
+
+      function applyPdayOverridesView() {
+        const rows = Array.from(calendarBody.querySelectorAll("tr"));
+        for (const row of rows) {
+          const weekNumber = Number(row.dataset.weekNumber || "0");
+          const hasOverride = Boolean(pdayOverrides[weekNumber]);
+          const activeDay = pdayOverrides[weekNumber] || "Monday";
+          const mutedDays = mutedDaysByWeek[weekNumber] || {};
+          const dayCells = Array.from(row.querySelectorAll("td")).slice(1);
+          let movedNames = ["", ""];
+          if (activeDay !== "Monday") {
+            const targetCell = dayCells.find((cell) => cell.dataset.dayOfWeek === activeDay);
+            if (targetCell) {
+              const targetInputs = Array.from(targetCell.querySelectorAll("input"));
+              movedNames = [
+                targetInputs[0] ? targetInputs[0].value.trim() : "",
+                targetInputs[1] ? targetInputs[1].value.trim() : "",
+              ];
+            }
+          }
+
+          for (const cell of dayCells) {
+            const dayOfWeek = cell.dataset.dayOfWeek;
+            const box = cell.querySelector(".cell");
+            if (!box) continue;
+            const isMuted = Boolean(mutedDays[dayOfWeek]);
+            if (hasOverride && dayOfWeek === activeDay) {
+              box.classList.add("pday-active");
+            } else {
+              box.classList.remove("pday-active");
+            }
+            if (isMuted) {
+              box.classList.add("muted-active");
+            } else {
+              box.classList.remove("muted-active");
+            }
+
+            const inputs = Array.from(cell.querySelectorAll("input"));
+            for (const input of inputs) {
+              input.disabled = isMuted;
+            }
+            const pdayBtn = cell.querySelector(".pday-toggle");
+            if (pdayBtn) {
+              pdayBtn.disabled = isMuted;
+            }
+
+            if (dayOfWeek === "Monday") {
+              const mondayFixed = box.querySelector(".fixed-name");
+              const mondayPreview = box.querySelector(".monday-preview");
+              if (mondayFixed && mondayPreview) {
+                if (activeDay === "Monday") {
+                  mondayFixed.style.display = "block";
+                  mondayPreview.style.display = "none";
+                  mondayPreview.textContent = "";
+                } else {
+                  const previewText = movedNames.filter(Boolean).join(" / ");
+                  mondayFixed.style.display = "none";
+                  mondayPreview.textContent = previewText;
+                  mondayPreview.style.display = previewText ? "block" : "none";
+                }
+              }
+            }
+          }
+        }
+      }
+
       function renderCalendar(weeks) {
         calendarBody.innerHTML = "";
 
         for (const week of weeks) {
           const row = document.createElement("tr");
+          row.dataset.weekNumber = String(week.week_number);
           const weekCell = document.createElement("td");
           weekCell.className = "week-cell";
           weekCell.textContent = `W${week.week_number}`;
@@ -325,6 +543,7 @@
 
           for (const cellData of week.cells) {
             const cell = document.createElement("td");
+            cell.dataset.dayOfWeek = cellData.day_of_week;
             const box = document.createElement("div");
             box.className = "cell";
 
@@ -335,6 +554,37 @@
             dayNumber.textContent = cellData.day_number === null ? "-" : String(cellData.day_number);
 
             meta.appendChild(dayNumber);
+
+            if (cellData.day_number !== null) {
+              const actions = document.createElement("div");
+              actions.className = "meta-actions";
+
+              const pdayToggle = document.createElement("button");
+              pdayToggle.type = "button";
+              pdayToggle.className = "pday-toggle";
+              pdayToggle.textContent = "P";
+              pdayToggle.title = "Set PDAY for this week";
+              pdayToggle.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setPdayOverride(week.week_number, cellData.day_of_week);
+              });
+              actions.appendChild(pdayToggle);
+
+              const muteToggle = document.createElement("button");
+              muteToggle.type = "button";
+              muteToggle.className = "mute-toggle";
+              muteToggle.textContent = "M";
+              muteToggle.title = "Mute this day for export";
+              muteToggle.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleMuteDay(week.week_number, cellData.day_of_week);
+              });
+              actions.appendChild(muteToggle);
+
+              meta.prepend(actions);
+            }
             box.appendChild(meta);
 
             if (cellData.day_of_week === "Monday") {
@@ -342,23 +592,40 @@
               fixedName.className = "fixed-name";
               fixedName.textContent = "PDAY";
               box.appendChild(fixedName);
+
+              const mondayPreview = document.createElement("div");
+              mondayPreview.className = "monday-preview";
+              box.appendChild(mondayPreview);
             } else if (cellData.day_number === null) {
               const empty = document.createElement("div");
               empty.className = "empty-day";
               empty.textContent = "No date in this month";
               box.appendChild(empty);
             } else {
-              const input = document.createElement("input");
-              input.className = "name-input";
-              input.type = "text";
-              input.value = cellData.name || "";
-              input.placeholder = "Type a name";
-              input.addEventListener("change", () => {
-                if (cellData.occurrence) {
-                  saveCell(cellData.occurrence, cellData.day_of_week, input.value.trim());
-                }
-              });
-              box.appendChild(input);
+              const pdayLabel = document.createElement("div");
+              pdayLabel.className = "fixed-name pday-label";
+              pdayLabel.textContent = "PDAY";
+              box.appendChild(pdayLabel);
+
+              const editableContent = document.createElement("div");
+              editableContent.className = "editable-content";
+              const firstValue = (cellData.names && cellData.names.first) || cellData.name || "";
+              const secondValue = (cellData.names && cellData.names.second) || "";
+              for (let slot = 1; slot <= 2; slot += 1) {
+                const input = document.createElement("input");
+                input.className = slot === 2 ? "name-input secondary" : "name-input";
+                input.type = "text";
+                input.value = slot === 1 ? firstValue : secondValue;
+                input.placeholder = `Type a name (${slot})`;
+                input.addEventListener("change", () => {
+                  if (cellData.occurrence) {
+                    saveCell(cellData.occurrence, cellData.day_of_week, slot, input.value.trim());
+                  }
+                  applyPdayOverridesView();
+                });
+                editableContent.appendChild(input);
+              }
+              box.appendChild(editableContent);
             }
 
             cell.appendChild(box);
@@ -367,6 +634,7 @@
 
           calendarBody.appendChild(row);
         }
+        applyPdayOverridesView();
       }
 
       async function fetchCalendar() {
@@ -387,6 +655,8 @@
             return;
           }
 
+          Object.keys(pdayOverrides).forEach((key) => delete pdayOverrides[key]);
+          Object.keys(mutedDaysByWeek).forEach((key) => delete mutedDaysByWeek[key]);
           renderCalendar(data.weeks);
           showStatus(`Showing ${String(month).padStart(2, "0")}/${year}`);
         } catch (error) {
@@ -405,15 +675,18 @@
           const cells = dayCells.map((cell) => {
             const dayNumberEl = cell.querySelector(".meta span");
             const fixedNameEl = cell.querySelector(".fixed-name");
-            const inputEl = cell.querySelector("input");
+            const inputEls = Array.from(cell.querySelectorAll("input"));
             const dayNumber = dayNumberEl ? dayNumberEl.textContent.trim() : "-";
-            let name = "";
-            if (fixedNameEl) {
-              name = fixedNameEl.textContent.trim();
-            } else if (inputEl) {
-              name = inputEl.value.trim();
+            let names = ["", ""];
+            if (inputEls.length > 0) {
+              names = [
+                inputEls[0] ? inputEls[0].value.trim() : "",
+                inputEls[1] ? inputEls[1].value.trim() : "",
+              ];
+            } else if (fixedNameEl) {
+              names = [fixedNameEl.textContent.trim(), ""];
             }
-            return { dayNumber, name };
+            return { dayNumber, names };
           });
 
           weeks.push({ weekLabel, cells });
@@ -424,19 +697,76 @@
 
       function downloadCalendarImage() {
         const weeks = collectCalendarSnapshot();
-        const weekCount = weeks.length || 6;
+        const exportSourceWeeks = weeks.map((week) => ({
+          weekLabel: week.weekLabel,
+          cells: week.cells.map((cell) => ({ dayNumber: cell.dayNumber, names: [...cell.names] })),
+        }));
+
+        for (let w = 0; w < exportSourceWeeks.length; w += 1) {
+          const weekNumber = w + 1;
+          const mutedDays = mutedDaysByWeek[weekNumber] || {};
+          for (let d = 0; d < DAYS.length; d += 1) {
+            if (mutedDays[DAYS[d]]) {
+              exportSourceWeeks[w].cells[d].names = ["", ""];
+            }
+          }
+        }
+
+        for (let w = 0; w < exportSourceWeeks.length; w += 1) {
+          const weekNumber = w + 1;
+          const targetDay = pdayOverrides[weekNumber];
+          if (!targetDay || targetDay === "Monday") {
+            continue;
+          }
+
+          const targetDayIndex = DAYS.indexOf(targetDay);
+          if (targetDayIndex < 0) {
+            continue;
+          }
+
+          const mondayCell = exportSourceWeeks[w].cells[0];
+          const targetCell = exportSourceWeeks[w].cells[targetDayIndex];
+          if (!targetCell || targetCell.dayNumber === "-") {
+            continue;
+          }
+
+          mondayCell.names = [...(targetCell.names || ["", ""])];
+          targetCell.names = ["PDAY", ""];
+        }
+
+        for (let w = 0; w < exportSourceWeeks.length; w += 1) {
+          const weekNumber = w + 1;
+          const targetDay = pdayOverrides[weekNumber] || "Monday";
+          const mutedDays = mutedDaysByWeek[weekNumber] || {};
+          for (let d = 0; d < DAYS.length; d += 1) {
+            const dayName = DAYS[d];
+            if (mutedDays[dayName] && dayName !== targetDay) {
+              exportSourceWeeks[w].cells[d].names = ["", ""];
+            }
+          }
+        }
+        const exportWeeks = [...exportSourceWeeks];
+        while (exportWeeks.length > 1) {
+          const lastWeek = exportWeeks[exportWeeks.length - 1];
+          const hasAnyDate = lastWeek.cells.some((cell) => cell.dayNumber && cell.dayNumber !== "-");
+          if (hasAnyDate) {
+            break;
+          }
+          exportWeeks.pop();
+        }
+
+        const weekCount = exportWeeks.length || 1;
         const selected = monthPicker.value || "calendar";
         const [y, m] = selected.split("-");
-        const title = y && m ? `${m}/${y}` : "Calendar";
+        const title = y && m ? `${m}/${y}` : "Almoço Missionário";
         const dateStamp = new Date().toISOString().slice(0, 10);
 
-        const weekColW = 78;
         const dayColW = 152;
         const headerH = 44;
         const rowH = 104;
         const pad = 16;
-        const width = pad * 2 + weekColW + dayColW * 7;
-        const height = pad * 2 + headerH + rowH * weekCount + 34;
+        const width = pad * 2 + dayColW * 7;
+        const height = pad * 2 + headerH + rowH * weekCount + 52;
         const scale = 2;
 
         const canvas = document.createElement("canvas");
@@ -450,11 +780,11 @@
 
         ctx.fillStyle = "#1a2433";
         ctx.font = "bold 18px Segoe UI, Tahoma, sans-serif";
-        ctx.fillText(`Calendar ${title}`, pad, pad + 4);
+        ctx.fillText(`Almoço Missionário ${title}`, pad, pad + 4);
 
         const gridX = pad;
         const gridY = pad + 16;
-        const gridW = weekColW + dayColW * 7;
+        const gridW = dayColW * 7;
         const gridH = headerH + rowH * weekCount;
 
         ctx.fillStyle = "#eff4fa";
@@ -468,8 +798,8 @@
           ctx.moveTo(gridX, yLine);
           ctx.lineTo(gridX + gridW, yLine);
         }
-        for (let i = 0; i <= 8; i += 1) {
-          const xLine = i === 0 ? gridX : i === 1 ? gridX + weekColW : gridX + weekColW + (i - 1) * dayColW;
+        for (let i = 0; i <= 7; i += 1) {
+          const xLine = gridX + i * dayColW;
           ctx.moveTo(xLine, gridY);
           ctx.lineTo(xLine, gridY + gridH);
         }
@@ -478,34 +808,68 @@
         ctx.fillStyle = "#44556d";
         ctx.font = "bold 13px Segoe UI, Tahoma, sans-serif";
         ctx.textBaseline = "middle";
-        ctx.fillText("Week", gridX + 18, gridY + headerH / 2);
-        for (let i = 0; i < DAYS.length; i += 1) {
-          const x = gridX + weekColW + i * dayColW + 10;
-          ctx.fillText(DAYS[i], x, gridY + headerH / 2);
+        for (let i = 0; i < EXPORT_DAYS_PT.length; i += 1) {
+          const x = gridX + i * dayColW + dayColW / 2;
+          ctx.textAlign = "center";
+          ctx.fillText(EXPORT_DAYS_PT[i], x, gridY + headerH / 2);
         }
 
-        for (let w = 0; w < weeks.length; w += 1) {
+        for (let w = 0; w < exportWeeks.length; w += 1) {
           const rowTop = gridY + headerH + w * rowH;
-          const rowMid = rowTop + rowH / 2;
-          ctx.fillStyle = "#6b7a90";
-          ctx.font = "bold 13px Segoe UI, Tahoma, sans-serif";
-          ctx.fillText(weeks[w].weekLabel || `W${w + 1}`, gridX + 24, rowMid);
 
           for (let d = 0; d < DAYS.length; d += 1) {
-            const cell = weeks[w].cells[d] || { dayNumber: "-", name: "" };
-            const left = gridX + weekColW + d * dayColW;
+            const cell = exportWeeks[w].cells[d] || { dayNumber: "-", names: ["", ""] };
+            const left = gridX + d * dayColW;
+            const centerX = left + dayColW / 2;
+            const centerY = rowTop + rowH / 2;
 
             ctx.fillStyle = "#6b7a90";
             ctx.font = "12px Segoe UI, Tahoma, sans-serif";
             ctx.textAlign = "right";
-            ctx.fillText(cell.dayNumber, left + dayColW - 10, rowTop + 14);
+            ctx.fillText(cell.dayNumber || "-", left + dayColW - 10, rowTop + 14);
 
-            ctx.textAlign = "left";
-            ctx.fillStyle = cell.name === "PDAY" ? "#0f7b6c" : "#1a2433";
-            ctx.font = cell.name === "PDAY" ? "bold 13px Segoe UI, Tahoma, sans-serif" : "13px Segoe UI, Tahoma, sans-serif";
-            ctx.fillText(cell.name || "", left + 10, rowTop + 58);
+            const firstName = (cell.names && cell.names[0]) || "";
+            const secondName = (cell.names && cell.names[1]) || "";
+            const hasFirst = Boolean(firstName);
+            const hasSecond = Boolean(secondName);
+
+            ctx.textAlign = "center";
+            if (firstName === "PDAY") {
+              ctx.fillStyle = "#0f7b6c";
+              ctx.font = "bold 20px Segoe UI, Tahoma, sans-serif";
+              ctx.fillText(firstName, centerX, centerY);
+            } else if (hasFirst && hasSecond) {
+              ctx.fillStyle = "#138c3f";
+              ctx.font = "bold 18px Segoe UI, Tahoma, sans-serif";
+              ctx.fillText(firstName, centerX, centerY - 12);
+              ctx.fillStyle = "#d6a800";
+              ctx.fillText(secondName, centerX, centerY + 12);
+            } else {
+              const singleName = hasFirst ? firstName : secondName;
+              ctx.fillStyle = "#1a2433";
+              ctx.font = "bold 20px Segoe UI, Tahoma, sans-serif";
+              ctx.fillText(singleName, centerX, centerY);
+            }
           }
         }
+
+        const legendY = gridY + gridH + 24;
+        const squareSize = 12;
+        const legendStartX = gridX + 10;
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#138c3f";
+        ctx.fillRect(legendStartX, legendY - squareSize / 2, squareSize, squareSize);
+        ctx.fillStyle = "#1a2433";
+        ctx.font = "bold 14px Segoe UI, Tahoma, sans-serif";
+        ctx.fillText("Eusébio A", legendStartX + squareSize + 8, legendY);
+
+        const secondLegendX = legendStartX + 150;
+        ctx.fillStyle = "#d6a800";
+        ctx.fillRect(secondLegendX, legendY - squareSize / 2, squareSize, squareSize);
+        ctx.fillStyle = "#1a2433";
+        ctx.fillText("Eusébio B", secondLegendX + squareSize + 8, legendY);
 
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/png");
