@@ -132,38 +132,43 @@ Fly automatically injects the secret into the container environment.
 
 ## Step 10 — Python Initialization
 
+This project uses `google-cloud-firestore` directly (not `firebase_admin`). The only dependency needed is:
+
+```
+google-cloud-firestore
+```
+
+Example initialization (see `store.py`):
+
 ```python
 import os
 import json
-import firebase_admin
-from firebase_admin import credentials, firestore
+from google.cloud import firestore
+from google.oauth2 import service_account
 
-service_account = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
-cred = credentials.Certificate(service_account)
+credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
+service_account_info = json.loads(credentials_json)
+creds = service_account.Credentials.from_service_account_info(service_account_info)
 
-firebase_admin.initialize_app(cred, {
-    "projectId": os.environ["GOOGLE_CLOUD_PROJECT"]
-})
+project_id = os.environ.get("GOOGLE_CLOUD_PROJECT") or service_account_info.get("project_id")
+db = firestore.Client(project=project_id, credentials=creds)
 
-db = firestore.client()
-collection = db.collection(os.environ.get("FIRESTORE_COLLECTION", "calendar_entries"))
+collection_name = os.environ.get("FIRESTORE_COLLECTION", "calendar_entries")
 ```
 
 ---
 
 ## Step 11 — User Identity Model
 
-When a user authenticates with Google via Firebase, the backend receives a JWT ID token containing:
+Firebase Authentication runs entirely in the browser. The frontend signs in the user with Google and passes `currentUser.uid` to the backend via an `X-User-Id` request header. The backend uses this UID to scope all Firestore reads and writes.
 
-- `uid` — stable unique identifier (**use this as the primary key**)
-- `email`, `name`, `picture`
-
-Example Firestore structure:
+Each user has a single document in the collection, keyed by their UID, with `entries` and `settings` stored as fields:
 
 ```
 calendar_entries
-  └── {user_uid}
-        └── entry documents
+  └── {user_uid}          ← document ID is the Firebase UID
+        ├── entries: { "1:Tuesday:1": "Name", ... }
+        └── settings: { "ward": "..." }
 ```
 
 > Never use `email` as a primary identifier — it can change.
