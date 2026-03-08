@@ -517,7 +517,17 @@
 
       .status-actions {
         display: inline-flex;
+        align-items: center;
         gap: 8px;
+      }
+
+      .status-divider {
+        display: inline-block;
+        width: 1px;
+        height: 24px;
+        background: var(--line);
+        opacity: 0.25;
+        align-self: center;
       }
 
       @keyframes spin {
@@ -572,23 +582,9 @@
             <p class="subtitle" id="calendarSubtitle">Adicione o nome das famílias nos dias da semana em que elas oferecem almoço aos Missionários</p>
           </div>
           <div class="selector">
-            <div id="topbarSlotSwitcher" class="slot-switcher">
-              <span class="slot-switcher-label">Perfil</span>
-              <button type="button" class="slot-btn active" data-profile="1">1</button>
-              <button type="button" class="slot-btn" data-profile="2">2</button>
-            </div>
-            <div class="selector-controls">
-              <div class="month-picker-wrap">
-                <label for="monthPicker">Mês / Ano</label>
-                <input id="monthPicker" type="month" />
-              </div>
-              <button id="signOutBtn" class="signout-btn" type="button" title="Sair" aria-label="Sair">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path>
-                  <path d="M10 17l-5-5 5-5"></path>
-                  <path d="M5 12h11"></path>
-                </svg>
-              </button>
+            <div class="month-picker-wrap">
+              <label for="monthPicker">Mês / Ano</label>
+              <input id="monthPicker" type="month" />
             </div>
           </div>
         </div>
@@ -606,6 +602,11 @@
             <span id="statusText"></span>
           </span>
           <div class="status-actions">
+            <div id="topbarSlotSwitcher" class="slot-switcher">
+              <button type="button" class="slot-btn active" data-profile="1">1</button>
+              <button type="button" class="slot-btn" data-profile="2">2</button>
+            </div>
+            <span class="status-divider"></span>
             <button id="settingsBtn" class="icon-btn" type="button" title="Configurações" aria-label="Configurações">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -617,6 +618,13 @@
                 <rect x="3.5" y="5" width="17" height="14" rx="2.5"></rect>
                 <circle cx="9" cy="10" r="1.5"></circle>
                 <path d="M6.5 16l4-4 2.2 2.2 2.7-2.7 2.1 2.5"></path>
+              </svg>
+            </button>
+            <button id="signOutBtn" class="icon-btn" type="button" title="Sair" aria-label="Sair">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path>
+                <path d="M10 17l-5-5 5-5"></path>
+                <path d="M5 12h11"></path>
               </svg>
             </button>
           </div>
