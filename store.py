@@ -173,7 +173,14 @@ class FirestoreStore:
     def save_entries(self, user_id, entries, profile=1):
         """Persist the calendar entries dict for the given user ID and profile."""
         clean_entries = self._sanitize_entries(entries)
-        self._doc_ref(user_id).set({self._entries_field(profile): clean_entries}, merge=True)
+        field = self._entries_field(profile)
+        # Use merge=[field] (field-path list) instead of merge=True to fully replace
+        # the entries field rather than deep-merging into it.  With merge=True,
+        # Firestore performs a deep merge of nested maps, so clearing an entry
+        # (passing an empty dict or a dict missing previously-saved keys) would be a
+        # no-op and the old values would persist.  Specifying the field path in the
+        # merge list tells Firestore to reset that field to the provided value.
+        self._doc_ref(user_id).set({field: clean_entries}, merge=[field])
 
     def load_settings(self, user_id):
         """Load and return the settings dict for the given user ID."""
@@ -186,7 +193,9 @@ class FirestoreStore:
 
     def save_settings(self, user_id, settings):
         """Persist the settings dict for the given user ID."""
-        self._doc_ref(user_id).set({"settings": self._sanitize_entries(settings)}, merge=True)
+        # Use merge=["settings"] (field-path list) to fully replace the settings
+        # field rather than deep-merging into it (see save_entries for details).
+        self._doc_ref(user_id).set({"settings": self._sanitize_entries(settings)}, merge=["settings"])
 
 
 def create_store(dev=False, data_file="calendar_data.json"):
