@@ -173,7 +173,10 @@ class FirestoreStore:
     def save_entries(self, user_id, entries, profile=1):
         """Persist the calendar entries dict for the given user ID and profile."""
         clean_entries = self._sanitize_entries(entries)
-        self._doc_ref(user_id).set({self._entries_field(profile): clean_entries}, merge=True)
+        field = self._entries_field(profile)
+        # merge=[field] resets the entire field to the provided value instead of
+        # deep-merging, so removed or cleared entries are actually deleted.
+        self._doc_ref(user_id).set({field: clean_entries}, merge=[field])
 
     def load_settings(self, user_id):
         """Load and return the settings dict for the given user ID."""
@@ -186,7 +189,9 @@ class FirestoreStore:
 
     def save_settings(self, user_id, settings):
         """Persist the settings dict for the given user ID."""
-        self._doc_ref(user_id).set({"settings": self._sanitize_entries(settings)}, merge=True)
+        # merge=["settings"] resets the field to the provided value instead of deep-merging.
+        clean = self._sanitize_entries(settings)
+        self._doc_ref(user_id).set({"settings": clean}, merge=["settings"])
 
 
 def create_store(dev=False, data_file="calendar_data.json"):
