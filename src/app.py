@@ -12,7 +12,7 @@ from store import create_store
 
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 5001
-INDEX_FILE = "index.html"
+INDEX_FILE = Path(__file__).with_name("index.html")
 DATA_FILE = "calendar_data.json"
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 MAX_DISPLAY_WEEKS = 6
@@ -150,7 +150,7 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
     def send_index(self):
         """Serve the index.html file."""
-        index_path = Path.cwd() / INDEX_FILE
+        index_path = INDEX_FILE
         if not index_path.exists():
             self.send_response(404)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
