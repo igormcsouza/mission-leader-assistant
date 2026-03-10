@@ -1,11 +1,7 @@
 """Calendar utility functions for the missionary lunch calendar application."""
 from datetime import date
 
-
-DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-MAX_DISPLAY_WEEKS = 6
-MAX_OCCURRENCES = 5
-MAX_SLOTS = 2
+from settings import DAYS, MAX_DISPLAY_WEEKS
 
 
 def get_cell_names(entries, occurrence, day_of_week):

@@ -1,15 +1,13 @@
 """HTTP request handler for the missionary lunch calendar."""
 import json
-import logging
 from datetime import date
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from core.utils import DAYS, MAX_OCCURRENCES, MAX_SLOTS, build_calendar_payload
-from settings import MAX_APP_PROFILES
-
-LOGGER = logging.getLogger("calendar_api")
+from core.logger import LOGGER
+from core.utils import build_calendar_payload
+from settings import DAYS, MAX_APP_PROFILES, MAX_OCCURRENCES, MAX_SLOTS
 
 
 class CalendarHandler(BaseHTTPRequestHandler):

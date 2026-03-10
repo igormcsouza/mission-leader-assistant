@@ -3,11 +3,10 @@ import argparse
 import logging
 from http.server import HTTPServer
 
+from core.logger import LOGGER
 from core.store import create_store
 from handlers.calendar_handler import CalendarHandler
 from settings import DATA_FILE, DEFAULT_HOST, DEFAULT_PORT
-
-LOGGER = logging.getLogger("calendar_api")
 
 
 def main():

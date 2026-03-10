@@ -5,13 +5,15 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 from core.utils import (  # noqa: E402  # pylint: disable=wrong-import-position
+    build_calendar_payload,
+    build_day_lookup,
+    get_cell_names,
+)
+from settings import (  # noqa: E402  # pylint: disable=wrong-import-position
     DAYS,
     MAX_DISPLAY_WEEKS,
     MAX_OCCURRENCES,
     MAX_SLOTS,
-    build_calendar_payload,
-    build_day_lookup,
-    get_cell_names,
 )
 
 
