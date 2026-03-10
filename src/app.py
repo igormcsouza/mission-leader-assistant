@@ -5,11 +5,7 @@ from http.server import HTTPServer
 
 from core.store import create_store
 from handlers.calendar_handler import CalendarHandler
-
-
-DEFAULT_HOST = "0.0.0.0"
-DEFAULT_PORT = 5001
-DATA_FILE = "calendar_data.json"
+from settings import DATA_FILE, DEFAULT_HOST, DEFAULT_PORT
 
 LOGGER = logging.getLogger("calendar_api")
 

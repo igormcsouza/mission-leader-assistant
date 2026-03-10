@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from core.utils import DAYS, MAX_OCCURRENCES, MAX_SLOTS, build_calendar_payload
-from settings import MAX_APP_PROFILES, handle_get_settings, handle_post_settings
+from settings import MAX_APP_PROFILES
 
 LOGGER = logging.getLogger("calendar_api")
 
@@ -39,7 +39,7 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
     def send_index(self):
         """Serve the index.html file."""
-        index_path = Path(__file__).parent.parent / "htmls" / "index.html"
+        index_path = Path(__file__).parent.parent / "views" / "index.html"
         if not index_path.exists():
             self.send_response(404)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
@@ -61,7 +61,7 @@ class CalendarHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/settings":
-            handle_get_settings(self)
+            self._handle_get_settings()
             return
 
         if parsed.path != "/api/calendar":
@@ -69,6 +69,61 @@ class CalendarHandler(BaseHTTPRequestHandler):
             return
 
         self._handle_get_calendar(parsed)
+
+    def do_POST(self):  # pylint: disable=invalid-name,too-many-return-statements
+        """Handle POST requests to update calendar entries."""
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/settings":
+            self._handle_post_settings()
+            return
+        if parsed.path != "/api/calendar":
+            self.send_json(404, {"status": "error", "error": "Not found"})
+            return
+
+        self._handle_post_calendar()
+
+    def _handle_get_settings(self):
+        """Handle GET /api/settings."""
+        user_id = self.get_user_id()
+        if not user_id:
+            self.send_json(401, {"status": "error", "error": "User not authenticated"})
+            return
+        settings = self.STORE.load_settings(user_id)
+        LOGGER.info("GET /api/settings user_id=%s", user_id)
+        self.send_json(200, {"status": "ok", "settings": settings})
+
+    def _handle_post_settings(self):
+        """Handle POST /api/settings."""
+        user_id = self.get_user_id()
+        if not user_id:
+            self.send_json(401, {"status": "error", "error": "User not authenticated"})
+            return
+        content_length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(content_length)
+        try:
+            data = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+        except json.JSONDecodeError:
+            self.send_json(400, {"status": "error", "error": "Invalid JSON"})
+            return
+        ward = str(data.get("ward", "")).strip()
+        settings = self.STORE.load_settings(user_id)
+        if ward:
+            settings["ward"] = ward
+        else:
+            settings.pop("ward", None)
+        # Per-profile title and subtitle (only update if key is present in request).
+        for app_profile in range(1, MAX_APP_PROFILES + 1):
+            for field in ("title", "subtitle"):
+                key = f"slot_{app_profile}_{field}"
+                if key in data:
+                    value = str(data[key]).strip()
+                    if value:
+                        settings[key] = value
+                    else:
+                        settings.pop(key, None)
+        self.STORE.save_settings(user_id, settings)
+        LOGGER.info("POST /api/settings user_id=%s ward=%r", user_id, ward)
+        self.send_json(200, {"status": "ok", "settings": settings})
 
     def _handle_get_calendar(self, parsed):
         """Handle GET /api/calendar."""
@@ -107,16 +162,8 @@ class CalendarHandler(BaseHTTPRequestHandler):
         )
         self.send_json(200, build_calendar_payload(year, month, entries))
 
-    def do_POST(self):  # pylint: disable=invalid-name,too-many-return-statements
-        """Handle POST requests to update calendar entries."""
-        parsed = urlparse(self.path)
-        if parsed.path == "/api/settings":
-            handle_post_settings(self)
-            return
-        if parsed.path != "/api/calendar":
-            self.send_json(404, {"status": "error", "error": "Not found"})
-            return
-
+    def _handle_post_calendar(self):  # pylint: disable=too-many-return-statements
+        """Handle POST /api/calendar."""
         user_id = self.get_user_id()
         if not user_id:
             self.send_json(401, {"status": "error", "error": "User not authenticated"})
