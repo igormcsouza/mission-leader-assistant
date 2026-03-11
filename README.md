@@ -1,10 +1,10 @@
-# Missionary Lunch Calendar
+# Missionary Leader Assistant
 
 [![Pylint](https://github.com/igormcsouza/missionary-lunch-calendar/actions/workflows/pylint.yml/badge.svg)](https://github.com/igormcsouza/missionary-lunch-calendar/actions/workflows/pylint.yml)
 [![Tests](https://github.com/igormcsouza/missionary-lunch-calendar/actions/workflows/tests.yml/badge.svg)](https://github.com/igormcsouza/missionary-lunch-calendar/actions/workflows/tests.yml)
 [![CodeQL](https://github.com/igormcsouza/missionary-lunch-calendar/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/igormcsouza/missionary-lunch-calendar/actions/workflows/github-code-scanning/codeql)
 
-This application aims to solve an issue of creating a calendar to the members of the Church of Jesus Christ of Latter Days Saints to give launch to the missionaries. It stores the proposed days the members are available and easily update for next month keeping the days.
+Being a mission leader is a great oportunity to serve, even better when we have an application design to help the leader in various aspects of the mission work. This project aims to help those leaders to manage the lunch calendar, visits calendar, baptism plan and much more! Stay tunned for the new features comming up and be free of to focus on the investigators and members of the Church of Jesus Christ of Latter-Days Saints
 
 ## Next steps...
 
@@ -28,7 +28,7 @@ There is also a Dockerfile and a `docker-compose.yml` for a one-command local st
 docker compose up --build
 ```
 
-The app will be available at `http://localhost:5001` in dev mode (no Firestore required).
+The app will be available at `http://localhost:8080` in dev mode (no Google Services should be required).
 
 ## Getting Started with Firebase & Firestore
 
