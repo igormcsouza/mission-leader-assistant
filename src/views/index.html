@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <button id="menuToggleBtn" class="icon-btn menu-toggle-btn hidden" type="button" title="Menu" aria-label="Menu de navegação" aria-expanded="false" aria-controls="sideDrawer">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" xmlns="http://www.w3.org/2000/svg">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
     <div class="page">
       <section id="loginView" class="auth-wrap">
         <button id="googleLoginBtn" class="auth-btn" type="button" disabled>
@@ -67,13 +75,6 @@
                 <path d="M6.5 16l4-4 2.2 2.2 2.7-2.7 2.1 2.5"></path>
               </svg>
             </button>
-            <button id="signOutBtn" class="icon-btn" type="button" title="Sair" aria-label="Sair">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path>
-                <path d="M10 17l-5-5 5-5"></path>
-                <path d="M5 12h11"></path>
-              </svg>
-            </button>
           </div>
         </div>
       </main>
@@ -107,6 +108,24 @@
         </div>
       </div>
     </div>
+
+    <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+
+    <nav id="sideDrawer" class="side-drawer" aria-label="Navegação principal">
+      <ul class="nav-items" role="list">
+      </ul>
+      <div class="drawer-footer">
+        <img id="drawerUserPhoto" class="drawer-user-photo" src="" alt="Foto do usuário" referrerpolicy="no-referrer" />
+        <span id="drawerUserName" class="drawer-user-name">Usuário</span>
+        <button id="drawerSignOutBtn" class="icon-btn" type="button" title="Sair" aria-label="Sair">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path>
+            <path d="M10 17l-5-5 5-5"></path>
+            <path d="M5 12h11"></path>
+          </svg>
+        </button>
+      </div>
+    </nav>
 
     <script type="module" src="/script.js"></script>
   </body>
