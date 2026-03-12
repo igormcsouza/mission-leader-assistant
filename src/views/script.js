@@ -26,7 +26,6 @@ const loginView = document.getElementById("loginView");
 const calendarView = document.getElementById("calendarView");
 const googleLoginBtn = document.getElementById("googleLoginBtn");
 const loginStatusEl = document.getElementById("loginStatus");
-const signOutBtn = document.getElementById("signOutBtn");
 const headerRow = document.getElementById("headerRow");
 const calendarBody = document.getElementById("calendarBody");
 const monthPicker = document.getElementById("monthPicker");
@@ -42,6 +41,12 @@ const statusSpinner = document.getElementById("statusSpinner");
 const loginSpinner = document.getElementById("loginSpinner");
 const googleIcon = document.getElementById("googleIcon");
 const loginBtnText = document.getElementById("loginBtnText");
+const menuToggleBtn = document.getElementById("menuToggleBtn");
+const sideDrawer = document.getElementById("sideDrawer");
+const drawerBackdrop = document.getElementById("drawerBackdrop");
+const drawerSignOutBtn = document.getElementById("drawerSignOutBtn");
+const drawerUserPhoto = document.getElementById("drawerUserPhoto");
+const drawerUserName = document.getElementById("drawerUserName");
 const pdayOverrides = {};
 const mutedDaysByWeek = {};
 let isCalendarInitialized = false;
@@ -49,6 +54,78 @@ let currentWard = "";
 let currentProfile = 1;
 let settingsEditProfile = 1;
 let allSettings = {};
+
+const NAV_ICONS = {
+  calendar: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="4" width="18" height="18" rx="2.5"></rect>
+    <line x1="3" y1="9" x2="21" y2="9"></line>
+    <line x1="8" y1="2" x2="8" y2="6"></line>
+    <line x1="16" y1="2" x2="16" y2="6"></line>
+  </svg>`,
+};
+
+const navigationItems = [
+  {
+    id: "calendar",
+    label: "Calendário",
+    icon: NAV_ICONS.calendar,
+    route: "/calendar",
+    active: true,
+  },
+];
+
+function buildNavItems() {
+  const navList = sideDrawer.querySelector(".nav-items");
+  navList.innerHTML = "";
+  for (const item of navigationItems) {
+    const li = document.createElement("li");
+    li.className = "nav-item" + (item.active ? " active" : "");
+    li.dataset.route = item.route;
+    li.setAttribute("role", "listitem");
+    li.innerHTML = `${item.icon}<span>${item.label}</span>`;
+    li.addEventListener("click", () => {
+      closeDrawer();
+    });
+    navList.appendChild(li);
+  }
+}
+
+function openDrawer() {
+  sideDrawer.classList.add("open");
+  drawerBackdrop.classList.remove("hidden");
+  menuToggleBtn.setAttribute("aria-expanded", "true");
+}
+
+function closeDrawer() {
+  sideDrawer.classList.remove("open");
+  drawerBackdrop.classList.add("hidden");
+  menuToggleBtn.setAttribute("aria-expanded", "false");
+}
+
+function toggleDrawer() {
+  if (sideDrawer.classList.contains("open")) {
+    closeDrawer();
+  } else {
+    openDrawer();
+  }
+}
+
+function updateDrawerUser(user) {
+  if (user) {
+    drawerUserName.textContent = user.displayName || user.email || "Usuário";
+    if (user.photoURL) {
+      drawerUserPhoto.src = user.photoURL;
+      drawerUserPhoto.style.display = "";
+    } else {
+      drawerUserPhoto.src = "";
+      drawerUserPhoto.style.display = "none";
+    }
+  } else {
+    drawerUserName.textContent = "Usuário";
+    drawerUserPhoto.src = "";
+    drawerUserPhoto.style.display = "none";
+  }
+}
 
 const calendarTitleEl = document.getElementById("calendarTitle");
 const calendarSubtitleEl = document.getElementById("calendarSubtitle");
@@ -737,9 +814,14 @@ googleLoginBtn.addEventListener("click", async () => {
     loginStatusEl.textContent = "Falha no login com Google. Tente novamente.";
   }
 });
-signOutBtn.addEventListener("click", async () => {
+menuToggleBtn.addEventListener("click", toggleDrawer);
+drawerBackdrop.addEventListener("click", closeDrawer);
+drawerSignOutBtn.addEventListener("click", async () => {
+  closeDrawer();
   await signOut(auth);
 });
+
+buildNavItems();
 
 onAuthStateChanged(auth, (user) => {
   if (!user) {
@@ -751,11 +833,14 @@ onAuthStateChanged(auth, (user) => {
     loginBtnText.textContent = "Entrar com Google";
     googleLoginBtn.disabled = false;
     currentWard = "";
+    closeDrawer();
+    updateDrawerUser(null);
     return;
   }
 
   loginView.classList.add("hidden");
   calendarView.classList.remove("hidden");
+  updateDrawerUser(user);
   if (!isCalendarInitialized) {
     renderHeader();
     setDefaultMonth();
