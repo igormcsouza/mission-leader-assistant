@@ -43,11 +43,6 @@ body {
   margin-bottom: 16px;
 }
 
-.topbar > div:first-of-type {
-  flex: 1;
-  min-width: 0;
-}
-
 .title {
   margin: 0;
   font-size: 1.4rem;
@@ -559,7 +554,10 @@ tbody td.week-cell {
 /* ── Side Drawer ─────────────────────────────────────── */
 
 .menu-toggle-btn {
-  flex-shrink: 0;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
 }
 
 .drawer-backdrop {

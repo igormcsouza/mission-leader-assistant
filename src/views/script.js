@@ -826,6 +826,7 @@ buildNavItems();
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     calendarView.classList.add("hidden");
+    menuToggleBtn.classList.add("hidden");
     loginView.classList.remove("hidden");
     loginStatusEl.textContent = "";
     loginSpinner.classList.add("hidden");
@@ -840,6 +841,7 @@ onAuthStateChanged(auth, (user) => {
 
   loginView.classList.add("hidden");
   calendarView.classList.remove("hidden");
+  menuToggleBtn.classList.remove("hidden");
   updateDrawerUser(user);
   if (!isCalendarInitialized) {
     renderHeader();
