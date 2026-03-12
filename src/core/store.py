@@ -107,7 +107,7 @@ class JsonFileStore:
 class FirestoreStore:
     """Cloud Firestore-backed store for production use."""
 
-    def __init__(self):
+    def __init__(self, collection):
         try:
             from google.cloud import firestore  # pylint: disable=import-outside-toplevel
             from google.oauth2 import service_account  # pylint: disable=import-outside-toplevel
@@ -119,11 +119,11 @@ class FirestoreStore:
 
         self._firestore = firestore
         self._service_account = service_account
-        self._collection_name = os.environ.get("FIRESTORE_COLLECTION", "calendar_entries")
+        self._collection_name = collection
         self._client = self._build_client()
 
     def _build_client(self):
-        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        project_id = "mission-leader-assistant"
         credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
         if (
             (credentials_json.startswith("'") and credentials_json.endswith("'"))
@@ -194,8 +194,8 @@ class FirestoreStore:
         self._doc_ref(user_id).set({"settings": clean}, merge=["settings"])
 
 
-def create_store(dev=False, data_file="calendar_data.json"):
+def create_store(dev=False, data_file="calendar_data.json", collection="calendar_entries"):
     """Create and return the appropriate store backend based on the dev flag."""
     if dev:
         return JsonFileStore(data_file)
-    return FirestoreStore()
+    return FirestoreStore(collection)

@@ -8,12 +8,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAAV3AMIbAMePWBCt1PJ5xAPq-vG_v2d-s",
-  authDomain: "missionary-lunch-calendar.firebaseapp.com",
-  projectId: "missionary-lunch-calendar",
-  storageBucket: "missionary-lunch-calendar.firebasestorage.app",
-  messagingSenderId: "1037425270789",
-  appId: "1:1037425270789:web:ea7b3183e1241036ebbc6c",
+  apiKey: "AIzaSyAQHtKCPY2ns3ohmp3D1s6dFfTx4Wc2SNI",
+  authDomain: "mission-leader-assistant.firebaseapp.com",
+  projectId: "mission-leader-assistant",
+  storageBucket: "mission-leader-assistant.firebasestorage.app",
+  messagingSenderId: "754740691680",
+  appId: "1:754740691680:web:f246612a5726d37162c685",
 };
 
 const app = initializeApp(firebaseConfig);
