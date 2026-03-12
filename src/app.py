@@ -4,8 +4,8 @@ import logging
 from http.server import HTTPServer
 
 from core.logger import LOGGER
-from core.store import create_store
-from handlers.calendar_handler import CalendarHandler
+from core.store import create_baptismal_plan_store, create_store
+from handlers.baptismal_plan_handler import BaptismalPlanHandler
 from settings import DATA_FILE, DEFAULT_HOST, DEFAULT_PORT
 
 
@@ -27,10 +27,13 @@ def main():
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
     )
-    CalendarHandler.STORE = create_store(
+    BaptismalPlanHandler.STORE = create_store(
         dev=args.dev, data_file=DATA_FILE, collection="calendar_entries"
     )
-    server = HTTPServer((args.host, args.port), CalendarHandler)
+    BaptismalPlanHandler.PLAN_STORE = create_baptismal_plan_store(
+        dev=args.dev, data_file=DATA_FILE
+    )
+    server = HTTPServer((args.host, args.port), BaptismalPlanHandler)
     LOGGER.info("Running at http://%s:%s", args.host, args.port)
     try:
         server.serve_forever()

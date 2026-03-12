@@ -1,7 +1,125 @@
 """Storage backends for the missionary lunch calendar application."""
 import json
 import os
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
+
+DEFAULT_BAPTISMAL_PROGRAM = [
+    {"item": "Prelúdio", "assignee": ""},
+    {"item": "Boas-vindas", "assignee": ""},
+    {"item": "Hino Inicial", "assignee": ""},
+    {"item": "Oração Inicial", "assignee": ""},
+    {"item": "Discurso: Batismo", "assignee": ""},
+    {"item": "Discurso: Espírito Santo", "assignee": ""},
+    {"item": "Seleção Musical", "assignee": ""},
+    {"item": "Ordenança do Batismo", "assignee": ""},
+    {"item": "Momento de Reverência", "assignee": ""},
+    {"item": "Confirmação", "assignee": ""},
+    {"item": "Testemunhos", "assignee": ""},
+    {"item": "Hino Final", "assignee": ""},
+    {"item": "Oração Final", "assignee": ""},
+    {"item": "Pós-lúdio", "assignee": ""},
+]
+
+
+def _str_val(val, default=""):
+    """Return a stripped string for simple text fields."""
+    return str(val).strip() if isinstance(val, (str, int, float)) else default
+
+
+def _sanitize_baptismal_plan(data):
+    """Return a sanitized copy of a baptismal plan document."""
+    if not isinstance(data, dict):
+        return {}
+
+    def _sanitize_candidate(candidate):
+        if not isinstance(candidate, dict):
+            return None
+        return {
+            "id": _str_val(candidate.get("id")),
+            "fullName": _str_val(candidate.get("fullName")),
+            "birthDate": _str_val(candidate.get("birthDate")),
+            "age": _str_val(candidate.get("age")),
+            "candidateType": _str_val(candidate.get("candidateType")),
+            "interviewCompleted": bool(candidate.get("interviewCompleted")),
+            "interviewedBy": _str_val(candidate.get("interviewedBy")),
+        }
+
+    def _sanitize_ordinance(ordinance):
+        if not isinstance(ordinance, dict):
+            return None
+        return {
+            "candidateId": _str_val(ordinance.get("candidateId")),
+            "baptizerName": _str_val(ordinance.get("baptizerName")),
+            "baptizerPriesthood": _str_val(ordinance.get("baptizerPriesthood")),
+            "confirmationBy": _str_val(ordinance.get("confirmationBy")),
+        }
+
+    def _sanitize_witness(witness):
+        if not isinstance(witness, dict):
+            return None
+        return {
+            "candidateId": _str_val(witness.get("candidateId")),
+            "witness1": _str_val(witness.get("witness1")),
+            "witness2": _str_val(witness.get("witness2")),
+        }
+
+    def _sanitize_program_item(item):
+        if not isinstance(item, dict):
+            return None
+        return {
+            "item": _str_val(item.get("item")),
+            "assignee": _str_val(item.get("assignee")),
+        }
+
+    plan = {
+        "serviceDate": _str_val(data.get("serviceDate")),
+        "serviceTime": _str_val(data.get("serviceTime")),
+        "ward": _str_val(data.get("ward")),
+        "location": _str_val(data.get("location")),
+        "conductingLeader": _str_val(data.get("conductingLeader")),
+        "status": _str_val(data.get("status", "Draft")),
+        "candidates": [],
+        "ordinances": [],
+        "witnesses": [],
+        "program": [],
+        "notes": _str_val(data.get("notes")),
+    }
+    for candidate in data.get("candidates", []):
+        sanitized = _sanitize_candidate(candidate)
+        if sanitized is not None:
+            plan["candidates"].append(sanitized)
+    for ordinance in data.get("ordinances", []):
+        sanitized = _sanitize_ordinance(ordinance)
+        if sanitized is not None:
+            plan["ordinances"].append(sanitized)
+    for witness in data.get("witnesses", []):
+        sanitized = _sanitize_witness(witness)
+        if sanitized is not None:
+            plan["witnesses"].append(sanitized)
+    for item in data.get("program", []):
+        sanitized = _sanitize_program_item(item)
+        if sanitized is not None:
+            plan["program"].append(sanitized)
+    return plan
+
+
+def _new_plan_skeleton():
+    """Return a fresh baptismal plan dict with defaults."""
+    return {
+        "serviceDate": "",
+        "serviceTime": "",
+        "ward": "",
+        "location": "",
+        "conductingLeader": "",
+        "status": "Draft",
+        "candidates": [],
+        "ordinances": [],
+        "witnesses": [],
+        "program": [dict(item) for item in DEFAULT_BAPTISMAL_PROGRAM],
+        "notes": "",
+    }
 
 
 class JsonFileStore:
@@ -199,3 +317,194 @@ def create_store(dev=False, data_file="calendar_data.json", collection="calendar
     if dev:
         return JsonFileStore(data_file)
     return FirestoreStore(collection)
+
+
+class BaptismalPlanJsonStore:
+    """File-based JSON store for baptismal plans (local/development use)."""
+
+    def __init__(self, data_file):
+        base, _, ext = data_file.rpartition(".")
+        if base:
+            plan_file = f"{base}_baptismal_plans.{ext}"
+        else:
+            plan_file = f"{data_file}_baptismal_plans"
+        self.path = Path.cwd() / plan_file
+
+    def _read_raw(self):
+        if not self.path.exists():
+            return {}
+        try:
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
+        return raw if isinstance(raw, dict) else {}
+
+    def _write_raw(self, data):
+        self.path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+    def list_plans(self, user_id):
+        """Return list of plan summaries ordered by serviceDate descending."""
+        raw = self._read_raw()
+        user_plans = raw.get(user_id, {})
+        summaries = []
+        for plan_id, plan_data in user_plans.items():
+            if not isinstance(plan_data, dict):
+                continue
+            candidates = plan_data.get("candidates", [])
+            names = [c.get("fullName", "") for c in candidates if isinstance(c, dict)]
+            summaries.append({
+                "id": plan_id,
+                "serviceDate": plan_data.get("serviceDate", ""),
+                "candidates": names,
+                "status": plan_data.get("status", "Draft"),
+            })
+        summaries.sort(key=lambda p: p.get("serviceDate", ""), reverse=True)
+        return summaries
+
+    def get_plan(self, user_id, plan_id):
+        """Return full plan data or None if not found."""
+        raw = self._read_raw()
+        plan = raw.get(user_id, {}).get(plan_id)
+        return plan if isinstance(plan, dict) else None
+
+    def create_plan(self, user_id):
+        """Create a new plan and return (plan_id, plan_data)."""
+        raw = self._read_raw()
+        if user_id not in raw:
+            raw[user_id] = {}
+        plan_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        plan = _new_plan_skeleton()
+        plan["id"] = plan_id
+        plan["createdAt"] = now
+        plan["updatedAt"] = now
+        raw[user_id][plan_id] = plan
+        self._write_raw(raw)
+        return plan_id, plan
+
+    def update_plan(self, user_id, plan_id, plan_data):
+        """Update an existing plan. Returns updated plan or None if not found."""
+        raw = self._read_raw()
+        user_plans = raw.get(user_id, {})
+        existing = user_plans.get(plan_id)
+        if not isinstance(existing, dict):
+            return None
+        now = datetime.now(timezone.utc).isoformat()
+        plan = _sanitize_baptismal_plan(plan_data)
+        plan["id"] = plan_id
+        plan["createdAt"] = existing.get("createdAt", now)
+        plan["updatedAt"] = now
+        raw[user_id][plan_id] = plan
+        self._write_raw(raw)
+        return plan
+
+
+class BaptismalPlanFirestoreStore:
+    """Cloud Firestore-backed store for baptismal plans."""
+
+    def __init__(self):
+        try:
+            from google.cloud import firestore  # pylint: disable=import-outside-toplevel
+            from google.oauth2 import service_account  # pylint: disable=import-outside-toplevel
+        except ImportError as exc:
+            raise RuntimeError(
+                "google-cloud-firestore is required for non-dev mode. "
+                "Install dependencies and configure Google credentials."
+            ) from exc
+        self._firestore = firestore
+        self._service_account = service_account
+        self._client = self._build_client()
+
+    def _build_client(self):
+        project_id = "mission-leader-assistant"
+        credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
+        if (
+            (credentials_json.startswith("'") and credentials_json.endswith("'"))
+            or (credentials_json.startswith('"') and credentials_json.endswith('"'))
+        ):
+            credentials_json = credentials_json[1:-1]
+        if credentials_json:
+            try:
+                service_account_info = json.loads(credentials_json)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    "GOOGLE_APPLICATION_CREDENTIALS_JSON is not valid JSON"
+                ) from exc
+            credentials = self._service_account.Credentials.from_service_account_info(
+                service_account_info
+            )
+            resolved_project_id = project_id or service_account_info.get("project_id")
+            return self._firestore.Client(
+                project=resolved_project_id, credentials=credentials
+            )
+        return self._firestore.Client(project=project_id)
+
+    def _doc_ref(self, user_id):
+        return self._client.collection("baptismal_plan_entries").document(user_id)
+
+    def _read_plans_map(self, user_id):
+        snapshot = self._doc_ref(user_id).get()
+        if not snapshot.exists:
+            return {}
+        payload = snapshot.to_dict() or {}
+        plans_map = payload.get("plans", {})
+        return plans_map if isinstance(plans_map, dict) else {}
+
+    def list_plans(self, user_id):
+        """Return list of plan summaries ordered by serviceDate descending."""
+        plans_map = self._read_plans_map(user_id)
+        summaries = []
+        for plan_id, plan_data in plans_map.items():
+            if not isinstance(plan_data, dict):
+                continue
+            candidates = plan_data.get("candidates", [])
+            names = [c.get("fullName", "") for c in candidates if isinstance(c, dict)]
+            summaries.append({
+                "id": plan_id,
+                "serviceDate": plan_data.get("serviceDate", ""),
+                "candidates": names,
+                "status": plan_data.get("status", "Draft"),
+            })
+        summaries.sort(key=lambda p: p.get("serviceDate", ""), reverse=True)
+        return summaries
+
+    def get_plan(self, user_id, plan_id):
+        """Return full plan data or None if not found."""
+        plans_map = self._read_plans_map(user_id)
+        plan = plans_map.get(plan_id)
+        return plan if isinstance(plan, dict) else None
+
+    def create_plan(self, user_id):
+        """Create a new plan and return (plan_id, plan_data)."""
+        plans_map = self._read_plans_map(user_id)
+        plan_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        plan = _new_plan_skeleton()
+        plan["id"] = plan_id
+        plan["createdAt"] = now
+        plan["updatedAt"] = now
+        plans_map[plan_id] = plan
+        self._doc_ref(user_id).set({"plans": plans_map}, merge=True)
+        return plan_id, plan
+
+    def update_plan(self, user_id, plan_id, plan_data):
+        """Update an existing plan. Returns updated plan or None if not found."""
+        plans_map = self._read_plans_map(user_id)
+        existing = plans_map.get(plan_id)
+        if not isinstance(existing, dict):
+            return None
+        now = datetime.now(timezone.utc).isoformat()
+        plan = _sanitize_baptismal_plan(plan_data)
+        plan["id"] = plan_id
+        plan["createdAt"] = existing.get("createdAt", now)
+        plan["updatedAt"] = now
+        plans_map[plan_id] = plan
+        self._doc_ref(user_id).set({"plans": plans_map}, merge=True)
+        return plan
+
+
+def create_baptismal_plan_store(dev=False, data_file="calendar_data.json"):
+    """Create and return the appropriate baptismal plan store backend."""
+    if dev:
+        return BaptismalPlanJsonStore(data_file)
+    return BaptismalPlanFirestoreStore()
