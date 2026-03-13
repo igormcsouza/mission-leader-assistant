@@ -3,7 +3,7 @@ import re
 from urllib.parse import urlparse
 
 from core.logger import LOGGER
-from handlers.calendar_handler import CalendarHandler
+from handlers.default import DefaultHandler
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
@@ -17,8 +17,8 @@ def _valid_plan_id(plan_id):
     return bool(_UUID_RE.match(plan_id))
 
 
-class BaptismalPlanHandler(CalendarHandler):
-    """Extends CalendarHandler with Baptismal Plan API routes."""
+class BaptismalPlanHandler(DefaultHandler):
+    """Extends DefaultHandler with Baptismal Plan API routes."""
 
     PLAN_STORE = None
 

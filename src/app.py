@@ -10,6 +10,16 @@ from handlers.calendar_handler import CalendarHandler
 from settings import DATA_FILE, DEFAULT_HOST, DEFAULT_PORT
 
 
+class AppHandler(BaptismalPlanHandler, CalendarHandler):
+    """Combined HTTP handler routing both baptismal-plan and calendar API requests.
+
+    Python's MRO (AppHandler → BaptismalPlanHandler → CalendarHandler → DefaultHandler)
+    ensures that ``do_GET`` and ``do_POST`` in ``BaptismalPlanHandler`` are resolved first.
+    When a route is not matched there, the cooperative ``super().do_GET()`` / ``super().do_POST()``
+    call delegates to ``CalendarHandler``, which handles calendar and settings routes.
+    """
+
+
 def main():
     """Parse arguments, configure logging, and start the HTTP server."""
     parser = argparse.ArgumentParser(description="Run the missionary lunch calendar server.")
@@ -34,7 +44,7 @@ def main():
     BaptismalPlanHandler.PLAN_STORE = create_baptismal_plan_store(
         dev=args.dev, data_file=DATA_FILE
     )
-    server = HTTPServer((args.host, args.port), BaptismalPlanHandler)
+    server = HTTPServer((args.host, args.port), AppHandler)
     LOGGER.info("Running at http://%s:%s", args.host, args.port)
     try:
         server.serve_forever()
