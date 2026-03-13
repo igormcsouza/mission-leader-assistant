@@ -870,11 +870,10 @@ const bpConductingLeader = document.getElementById("bpConductingLeader");
 const bpStatus = document.getElementById("bpStatus");
 const bpAddCandidateBtn = document.getElementById("bpAddCandidateBtn");
 const bpCandidatesList = document.getElementById("bpCandidatesList");
-const bpOrdinancesList = document.getElementById("bpOrdinancesList");
-const bpOrdinancesEmpty = document.getElementById("bpOrdinancesEmpty");
-const bpWitnessesList = document.getElementById("bpWitnessesList");
-const bpWitnessesEmpty = document.getElementById("bpWitnessesEmpty");
+const bpOrdinancesWitnessesList = document.getElementById("bpOrdinancesWitnessesList");
+const bpOrdinancesWitnessesEmpty = document.getElementById("bpOrdinancesWitnessesEmpty");
 const bpProgramList = document.getElementById("bpProgramList");
+const bpProgramEndList = document.getElementById("bpProgramEndList");
 const bpNotes = document.getElementById("bpNotes");
 
 let bpCurrentPlanId = null;
@@ -1049,27 +1048,34 @@ function bpRenderCandidates(candidates) {
   });
 }
 
-function bpRenderOrdinances(candidates, ordinances) {
-  bpOrdinancesList.innerHTML = "";
+function bpRenderOrdinancesAndWitnesses(candidates, ordinances, witnesses) {
+  bpOrdinancesWitnessesList.innerHTML = "";
   if (!candidates || !candidates.length) {
-    bpOrdinancesEmpty.classList.remove("hidden");
+    bpOrdinancesWitnessesEmpty.classList.remove("hidden");
     return;
   }
-  bpOrdinancesEmpty.classList.add("hidden");
+  bpOrdinancesWitnessesEmpty.classList.add("hidden");
   const ordMap = {};
   (ordinances || []).forEach((o) => { ordMap[o.candidateId] = o; });
+  const witMap = {};
+  (witnesses || []).forEach((w) => { witMap[w.candidateId] = w; });
   candidates.forEach((c) => {
     const o = ordMap[c.id] || {};
+    const w = witMap[c.id] || {};
     const name = c.fullName || "Candidato";
+    const w1 = w.witness1 || "";
+    const w2 = w.witness2 || "";
+    const warnHtml = (!w1 || !w2)
+      ? `<p class="bp-warning">⚠ Mínimo de 2 testemunhas por batismo.</p>` : "";
     const card = document.createElement("div");
-    card.className = "bp-ord-card";
+    card.className = "bp-ord-witness-card";
     card.dataset.candidateId = c.id;
     card.innerHTML = `
       <div class="bp-ord-card-title">${_esc(name)}</div>
-      <div class="bp-ord-grid">
+      <div class="bp-ord-witness-grid">
         <div class="bp-field">
           <label class="bp-label">Batizado por</label>
-          <input class="bp-input bp-o-baptizerName" type="text" value="${_esc(o.baptizerName || "")}" placeholder="Nome" />
+          <input class="bp-input bp-o-baptizerName" type="text" value="${_esc(o.baptizerName || "")}" placeholder="ex: Élder Silva" />
         </div>
         <div class="bp-field">
           <label class="bp-label">Sacerdócio</label>
@@ -1081,52 +1087,22 @@ function bpRenderOrdinances(candidates, ordinances) {
         </div>
         <div class="bp-field">
           <label class="bp-label">Confirmado por</label>
-          <input class="bp-input bp-o-confirmationBy" type="text" value="${_esc(o.confirmationBy || "")}" placeholder="Nome" />
+          <input class="bp-input bp-o-confirmationBy" type="text" value="${_esc(o.confirmationBy || "")}" placeholder="ex: João Lima" />
         </div>
-      </div>`;
-    bpOrdinancesList.appendChild(card);
-    card.querySelectorAll(".bp-input, .bp-select").forEach((el) => {
-      el.addEventListener("blur", () => { if (bpEditorReady) bpAutoSave(); });
-      el.addEventListener("change", () => { if (bpEditorReady) bpAutoSave(); });
-    });
-  });
-}
-
-function bpRenderWitnesses(candidates, witnesses) {
-  bpWitnessesList.innerHTML = "";
-  if (!candidates || !candidates.length) {
-    bpWitnessesEmpty.classList.remove("hidden");
-    return;
-  }
-  bpWitnessesEmpty.classList.add("hidden");
-  const witMap = {};
-  (witnesses || []).forEach((w) => { witMap[w.candidateId] = w; });
-  candidates.forEach((c) => {
-    const w = witMap[c.id] || {};
-    const name = c.fullName || "Candidato";
-    const card = document.createElement("div");
-    card.className = "bp-witness-card";
-    card.dataset.candidateId = c.id;
-    const w1 = w.witness1 || "";
-    const w2 = w.witness2 || "";
-    const warnHtml = (!w1 || !w2)
-      ? `<p class="bp-warning">⚠ Mínimo de 2 testemunhas por batismo.</p>` : "";
-    card.innerHTML = `
-      <div class="bp-witness-card-title">${_esc(name)}</div>
-      <div class="bp-witness-grid">
         <div class="bp-field">
           <label class="bp-label">Testemunha 1</label>
-          <input class="bp-input bp-w-witness1" type="text" value="${_esc(w1)}" placeholder="Nome" />
+          <input class="bp-input bp-w-witness1" type="text" value="${_esc(w1)}" placeholder="ex: Pedro Alves" />
         </div>
         <div class="bp-field">
           <label class="bp-label">Testemunha 2</label>
-          <input class="bp-input bp-w-witness2" type="text" value="${_esc(w2)}" placeholder="Nome" />
+          <input class="bp-input bp-w-witness2" type="text" value="${_esc(w2)}" placeholder="ex: Carlos Neves" />
         </div>
       </div>
       ${warnHtml}`;
-    bpWitnessesList.appendChild(card);
-    card.querySelectorAll(".bp-input").forEach((el) => {
+    bpOrdinancesWitnessesList.appendChild(card);
+    card.querySelectorAll(".bp-input, .bp-select").forEach((el) => {
       el.addEventListener("blur", () => { if (bpEditorReady) bpAutoSave(); });
+      el.addEventListener("change", () => { if (bpEditorReady) bpAutoSave(); });
     });
   });
 }
@@ -1148,31 +1124,45 @@ function bpRenderTalkRow(container, talk) {
   container.appendChild(row);
 }
 
+// Placeholders for each static program item (indexed by position in the program array):
+// [0]=Hino Inicial, [1]=Oração Inicial, [2]=Seleção Musical,
+// [3]=Testemunhos, [4]=Hino Final, [5]=Oração Final
+const BP_PROGRAM_PLACEHOLDERS = [
+  "ex: 92 - Escolhemos o Caminho",      // Hino Inicial
+  "ex: João Silva",                       // Oração Inicial
+  "ex: 193 - Sou um filho de Deus",      // Seleção Musical
+  "ex: Maria Santos, Pedro Lima...",      // Testemunhos
+  "ex: 218 - Eu Sou Filho de Deus",      // Hino Final
+  "ex: Ana Lima",                         // Oração Final
+];
+
 function bpRenderProgram(program, talks) {
   bpProgramList.innerHTML = "";
+  bpProgramEndList.innerHTML = "";
   const items = program || [];
 
   function renderStaticItem(item, idx) {
     const row = document.createElement("div");
     row.className = "bp-program-item";
     row.dataset.programIndex = idx;
+    const placeholder = BP_PROGRAM_PLACEHOLDERS[idx] || "";
     row.innerHTML = `
       <span class="bp-program-item-name">${_esc(item.item)}</span>
-      <input class="bp-input bp-p-assignee" type="text" value="${_esc(item.assignee || "")}" placeholder="Responsável" />`;
+      <input class="bp-input bp-p-assignee" type="text" value="${_esc(item.assignee || "")}" placeholder="${_esc(placeholder)}" />`;
     row.querySelector(".bp-p-assignee").addEventListener("blur", () => {
       if (bpEditorReady) bpAutoSave();
     });
     return row;
   }
 
-  // Pair 1: Hino Inicial + Oração Inicial
+  // Pair 1: Hino Inicial + Oração Inicial → bpProgramList
   const pairStart = document.createElement("div");
   pairStart.className = "bp-program-pair";
   if (items[0]) pairStart.appendChild(renderStaticItem(items[0], 0));
   if (items[1]) pairStart.appendChild(renderStaticItem(items[1], 1));
   bpProgramList.appendChild(pairStart);
 
-  // Talks subsection
+  // Talks subsection → bpProgramList
   const talksSection = document.createElement("div");
   talksSection.className = "bp-talks-section";
   talksSection.innerHTML = `
@@ -1189,16 +1179,16 @@ function bpRenderProgram(program, talks) {
     if (bpEditorReady) bpHandleAddTalk();
   });
 
-  // Middle items: Seleção Musical, Testemunhos
-  if (items[2]) bpProgramList.appendChild(renderStaticItem(items[2], 2));
-  if (items[3]) bpProgramList.appendChild(renderStaticItem(items[3], 3));
+  // Seleção Musical + Testemunhos → bpProgramEndList
+  if (items[2]) bpProgramEndList.appendChild(renderStaticItem(items[2], 2));
+  if (items[3]) bpProgramEndList.appendChild(renderStaticItem(items[3], 3));
 
-  // Pair 2: Hino Final + Oração Final
+  // Pair 2: Hino Final + Oração Final → bpProgramEndList
   const pairEnd = document.createElement("div");
   pairEnd.className = "bp-program-pair";
   if (items[4]) pairEnd.appendChild(renderStaticItem(items[4], 4));
   if (items[5]) pairEnd.appendChild(renderStaticItem(items[5], 5));
-  bpProgramList.appendChild(pairEnd);
+  bpProgramEndList.appendChild(pairEnd);
 }
 
 function bpRenderEditor(plan) {
@@ -1215,8 +1205,9 @@ function bpRenderEditor(plan) {
   bpNotes.value = plan.notes || "";
 
   bpRenderCandidates(plan.candidates || []);
-  bpRenderOrdinances(plan.candidates || [], plan.ordinances || []);
-  bpRenderWitnesses(plan.candidates || [], plan.witnesses || []);
+  bpRenderOrdinancesAndWitnesses(
+    plan.candidates || [], plan.ordinances || [], plan.witnesses || []
+  );
   bpRenderProgram(plan.program || [], plan.talks || []);
 
   bpEditorReady = true;
@@ -1245,19 +1236,17 @@ function bpCollectPlanData() {
   });
 
   const ordinances = [];
-  bpOrdinancesList.querySelectorAll(".bp-ord-card").forEach((card) => {
+  const witnesses = [];
+  bpOrdinancesWitnessesList.querySelectorAll(".bp-ord-witness-card").forEach((card) => {
+    const cid = card.dataset.candidateId;
     ordinances.push({
-      candidateId: card.dataset.candidateId,
+      candidateId: cid,
       baptizerName: card.querySelector(".bp-o-baptizerName").value,
       baptizerPriesthood: card.querySelector(".bp-o-baptizerPriesthood").value,
       confirmationBy: card.querySelector(".bp-o-confirmationBy").value,
     });
-  });
-
-  const witnesses = [];
-  bpWitnessesList.querySelectorAll(".bp-witness-card").forEach((card) => {
     witnesses.push({
-      candidateId: card.dataset.candidateId,
+      candidateId: cid,
       witness1: card.querySelector(".bp-w-witness1").value,
       witness2: card.querySelector(".bp-w-witness2").value,
     });
@@ -1265,6 +1254,11 @@ function bpCollectPlanData() {
 
   const program = [];
   bpProgramList.querySelectorAll(".bp-program-item").forEach((row) => {
+    const assignee = row.querySelector(".bp-p-assignee").value;
+    const itemName = row.querySelector(".bp-program-item-name").textContent;
+    program.push({ item: itemName, assignee });
+  });
+  bpProgramEndList.querySelectorAll(".bp-program-item").forEach((row) => {
     const assignee = row.querySelector(".bp-p-assignee").value;
     const itemName = row.querySelector(".bp-program-item-name").textContent;
     program.push({ item: itemName, assignee });
@@ -1360,8 +1354,9 @@ async function bpRemoveCandidate(candidateId) {
   bpCurrentPlan.ordinances = (bpCurrentPlan.ordinances || []).filter((o) => o.candidateId !== candidateId);
   bpCurrentPlan.witnesses = (bpCurrentPlan.witnesses || []).filter((w) => w.candidateId !== candidateId);
   bpRenderCandidates(bpCurrentPlan.candidates);
-  bpRenderOrdinances(bpCurrentPlan.candidates, bpCurrentPlan.ordinances);
-  bpRenderWitnesses(bpCurrentPlan.candidates, bpCurrentPlan.witnesses);
+  bpRenderOrdinancesAndWitnesses(
+    bpCurrentPlan.candidates, bpCurrentPlan.ordinances, bpCurrentPlan.witnesses
+  );
   bpEditorReady = true;
   bpAutoSave();
 }
@@ -1381,8 +1376,9 @@ function bpHandleAddCandidate() {
   bpCurrentPlan.ordinances = [...(bpCurrentPlan.ordinances || []), { candidateId: newId, baptizerName: "", baptizerPriesthood: "", confirmationBy: "" }];
   bpCurrentPlan.witnesses = [...(bpCurrentPlan.witnesses || []), { candidateId: newId, witness1: "", witness2: "" }];
   bpRenderCandidates(bpCurrentPlan.candidates);
-  bpRenderOrdinances(bpCurrentPlan.candidates, bpCurrentPlan.ordinances);
-  bpRenderWitnesses(bpCurrentPlan.candidates, bpCurrentPlan.witnesses);
+  bpRenderOrdinancesAndWitnesses(
+    bpCurrentPlan.candidates, bpCurrentPlan.ordinances, bpCurrentPlan.witnesses
+  );
   bpEditorReady = true;
   bpAutoSave();
 }
@@ -1462,21 +1458,15 @@ function bpExportPdf() {
   const witMap = {};
   (plan.witnesses || []).forEach((w) => { witMap[w.candidateId] = w; });
 
-  const ordRows = (plan.candidates || []).map((c) => {
+  const ordWitRows = (plan.candidates || []).map((c) => {
     const o = ordMap[c.id] || {};
+    const w = witMap[c.id] || {};
     const priPt = BP_PRIESTHOOD_PT[o.baptizerPriesthood] || o.baptizerPriesthood || "";
     return `<tr>
       <td>${_esc(c.fullName)}</td>
       <td>${_esc(o.baptizerName || "")}</td>
       <td>${priPt}</td>
       <td>${_esc(o.confirmationBy || "")}</td>
-    </tr>`;
-  }).join("");
-
-  const witRows = (plan.candidates || []).map((c) => {
-    const w = witMap[c.id] || {};
-    return `<tr>
-      <td>${_esc(c.fullName)}</td>
       <td>${_esc(w.witness1 || "")}</td>
       <td>${_esc(w.witness2 || "")}</td>
     </tr>`;
@@ -1486,7 +1476,13 @@ function bpExportPdf() {
     `<tr><td>${_esc(t.talkPerson || "")}</td><td>${_esc(t.talkTheme || "")}</td></tr>`
   ).join("");
 
-  const progRows = (plan.program || []).map((item) =>
+  // Split program into start (items 0-1) and end (items 2-5)
+  const progStart = (plan.program || []).slice(0, 2);
+  const progEnd = (plan.program || []).slice(2);
+  const progStartRows = progStart.map((item) =>
+    `<tr><td>${_esc(item.item)}</td><td>${_esc(item.assignee || "")}</td></tr>`
+  ).join("");
+  const progEndRows = progEnd.map((item) =>
     `<tr><td>${_esc(item.item)}</td><td>${_esc(item.assignee || "")}</td></tr>`
   ).join("");
 
@@ -1521,20 +1517,16 @@ function bpExportPdf() {
   <th>#</th><th>Nome Completo</th><th>Nasc.</th><th>Tipo</th><th>Entrevista</th>
 </tr></thead><tbody>${candidateRows}</tbody></table>
 
-<h2>Ordenanças</h2>
+${progStartRows ? `<h2>Início da Reunião</h2><table><thead><tr><th>Momento</th><th>Responsável</th></tr></thead><tbody>${progStartRows}</tbody></table>` : ""}
+
+${talkRows ? `<h2>Discursos</h2><table><thead><tr><th>Orador</th><th>Tema</th></tr></thead><tbody>${talkRows}</tbody></table>` : ""}
+
+<h2>Ordenanças e Testemunhas</h2>
 <table><thead><tr>
-  <th>Candidato</th><th>Batizado por</th><th>Sacerdócio</th><th>Confirmado por</th>
-</tr></thead><tbody>${ordRows}</tbody></table>
+  <th>Candidato</th><th>Batizado por</th><th>Sacerdócio</th><th>Confirmado por</th><th>Testemunha 1</th><th>Testemunha 2</th>
+</tr></thead><tbody>${ordWitRows}</tbody></table>
 
-<h2>Testemunhas</h2>
-<table><thead><tr>
-  <th>Candidato</th><th>Testemunha 1</th><th>Testemunha 2</th>
-</tr></thead><tbody>${witRows}</tbody></table>
-
-<h2>Programa da Reunião</h2>
-<table><thead><tr><th>Momento</th><th>Responsável</th></tr></thead><tbody>${progRows}</tbody></table>
-
-${(plan.talks || []).length > 0 ? `<h2>Discursos</h2><table><thead><tr><th>Orador</th><th>Tema</th></tr></thead><tbody>${talkRows}</tbody></table>` : ""}
+${progEndRows ? `<h2>Continuação do Programa</h2><table><thead><tr><th>Momento</th><th>Responsável</th></tr></thead><tbody>${progEndRows}</tbody></table>` : ""}
 
 ${plan.notes ? `<h2>Observações</h2><div class="notes">${_esc(plan.notes)}</div>` : ""}
 <script>window.onload = function(){ window.print(); }<\/script>

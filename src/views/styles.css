@@ -795,7 +795,7 @@ tbody td.week-cell {
 .bp-editor-area {
   flex: 1;
   min-width: 0;
-  padding: 24px 32px;
+  padding: 24px 380px;
   overflow-y: auto;
   height: 100%;
 }
@@ -1046,7 +1046,8 @@ tbody td.week-cell {
 
 /* Ordinance / Witness card */
 .bp-ord-card,
-.bp-witness-card {
+.bp-witness-card,
+.bp-ord-witness-card {
   background: #0f1823;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -1072,6 +1073,16 @@ tbody td.week-cell {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+}
+
+.bp-ord-witness-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.bp-section-program-end {
+  padding-top: 0;
 }
 
 .bp-warning {

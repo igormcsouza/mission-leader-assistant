@@ -6,6 +6,7 @@ from http.server import HTTPServer
 from core.logger import LOGGER
 from core.store import create_baptismal_plan_store, create_store
 from handlers.baptismal_plan_handler import BaptismalPlanHandler
+from handlers.calendar_handler import CalendarHandler
 from settings import DATA_FILE, DEFAULT_HOST, DEFAULT_PORT
 
 
@@ -27,7 +28,7 @@ def main():
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
     )
-    BaptismalPlanHandler.STORE = create_store(
+    CalendarHandler.STORE = create_store(
         dev=args.dev, data_file=DATA_FILE, collection="calendar_entries"
     )
     BaptismalPlanHandler.PLAN_STORE = create_baptismal_plan_store(
