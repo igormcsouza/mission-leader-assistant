@@ -27,12 +27,10 @@ docker compose up --build
 
 The app will be available at `http://localhost:8080` in dev mode (no Google Services required).
 
-### Option 2 — Direct Python (with hot-reload)
-
-First install [nodemon](https://www.npmjs.com/package/nodemon), then:
+### Option 2 — Direct Python
 
 ```bash
-nodemon --ext py --exec "python3 src/app.py --dev --host localhost"
+python3 src/app.py --dev --host localhost
 ```
 
 Use the `--dev` flag so the app uses local JSON file storage instead of Firestore. The `--host` flag is needed for Firebase auth to work correctly when not in dev mode.
