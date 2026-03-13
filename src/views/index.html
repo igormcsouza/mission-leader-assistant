@@ -78,6 +78,123 @@
           </div>
         </div>
       </main>
+
+      <main id="baptismalPlanView" class="bp-wrap hidden">
+        <div class="bp-layout">
+
+          <!-- Left panel: Plan history -->
+          <aside class="bp-history">
+            <div class="bp-history-header">
+              <h2 class="bp-history-title">Histórico</h2>
+              <button id="bpNewPlanBtn" class="bp-btn-primary" type="button">+ Novo Planejamento</button>
+            </div>
+            <ul id="bpPlanList" class="bp-plan-list" role="list"></ul>
+          </aside>
+
+          <!-- Right panel: Plan editor -->
+          <div class="bp-editor-area">
+
+            <div id="bpEmptyState" class="bp-empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.4" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+                <path d="M12 2C8.68 2 6 4.68 6 8c0 5.25 6 13 6 13s6-7.75 6-13c0-3.32-2.68-6-6-6z"></path>
+                <circle cx="12" cy="8" r="2"></circle>
+              </svg>
+              <p>Selecione um planejamento ou crie um novo</p>
+            </div>
+
+            <div id="bpEditorContent" class="hidden">
+
+              <!-- Toolbar -->
+              <div class="bp-editor-toolbar">
+                <div class="bp-editor-toolbar-left">
+                  <span id="bpSaveStatus" class="bp-save-status"></span>
+                </div>
+                <div class="bp-editor-toolbar-right">
+                  <button id="bpExportPdfBtn" class="bp-btn-secondary" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14,2 14,8 20,8"></polyline>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <polyline points="9,15 12,18 15,15"></polyline>
+                    </svg>
+                    Exportar PDF
+                  </button>
+                </div>
+              </div>
+
+              <!-- Informações do Batismo -->
+              <section class="bp-section">
+                <h3 class="bp-section-title">Informações do Batismo</h3>
+                <div class="bp-form-grid">
+                  <div class="bp-field">
+                    <label class="bp-label" for="bpServiceDate">Data do Batismo</label>
+                    <input id="bpServiceDate" class="bp-input" type="date" />
+                  </div>
+                  <div class="bp-field">
+                    <label class="bp-label" for="bpServiceTime">Horário</label>
+                    <input id="bpServiceTime" class="bp-input" type="time" />
+                  </div>
+                  <div class="bp-field">
+                    <label class="bp-label" for="bpWard">Ala</label>
+                    <input id="bpWard" class="bp-input" type="text" placeholder="Nome da Ala" />
+                  </div>
+                  <div class="bp-field">
+                    <label class="bp-label" for="bpLocation">Local</label>
+                    <input id="bpLocation" class="bp-input" type="text" placeholder="Local do batismo" />
+                  </div>
+                  <div class="bp-field">
+                    <label class="bp-label" for="bpConductingLeader">Líder que preside</label>
+                    <input id="bpConductingLeader" class="bp-input" type="text" placeholder="Nome do líder" />
+                  </div>
+                  <div class="bp-field">
+                    <label class="bp-label" for="bpStatus">Status</label>
+                    <select id="bpStatus" class="bp-select">
+                      <option value="Draft">Rascunho</option>
+                      <option value="Scheduled">Agendado</option>
+                      <option value="Completed">Realizado</option>
+                      <option value="Archived">Arquivado</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Candidatos -->
+              <section class="bp-section">
+                <div class="bp-section-header">
+                  <h3 class="bp-section-title">Candidatos</h3>
+                  <button id="bpAddCandidateBtn" class="bp-btn-secondary bp-btn-small" type="button">+ Adicionar Candidato</button>
+                </div>
+                <div id="bpCandidatesList"></div>
+              </section>
+
+              <!-- Programa da Reunião (início) -->
+              <section class="bp-section">
+                <h3 class="bp-section-title">Programa da Reunião</h3>
+                <div id="bpProgramList" class="bp-program-list"></div>
+              </section>
+
+              <!-- Ordenanças e Testemunhas (merged per-candidate) -->
+              <section class="bp-section">
+                <h3 class="bp-section-title">Ordenanças e Testemunhas</h3>
+                <div id="bpOrdinancesWitnessesList"></div>
+                <p id="bpOrdinancesWitnessesEmpty" class="bp-empty-note">Adicione candidatos para preencher as ordenanças e testemunhas.</p>
+              </section>
+
+              <!-- Programa da Reunião (continuação) -->
+              <section class="bp-section bp-section-program-end">
+                <div id="bpProgramEndList" class="bp-program-list"></div>
+              </section>
+
+              <!-- Observações -->
+              <section class="bp-section">
+                <h3 class="bp-section-title">Observações</h3>
+                <textarea id="bpNotes" class="bp-textarea" placeholder="Observações, pedidos especiais, coordenação..." rows="5"></textarea>
+              </section>
+
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
     <div id="settingsModal" class="modal-overlay hidden">

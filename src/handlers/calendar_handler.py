@@ -1,58 +1,17 @@
 """HTTP request handler for the missionary lunch calendar."""
-import json
 from datetime import date
-from http.server import BaseHTTPRequestHandler
-from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from core.logger import LOGGER
 from core.utils import build_calendar_payload
+from handlers.default import DefaultHandler
 from settings import DAYS, MAX_APP_PROFILES, MAX_OCCURRENCES, MAX_SLOTS
 
 
-class CalendarHandler(BaseHTTPRequestHandler):
+class CalendarHandler(DefaultHandler):
     """HTTP request handler for the calendar API."""
 
     STORE = None
-    LOGGED_USER_IDS = set()
-
-    def get_user_id(self):
-        """Extract and return the authenticated user ID from request headers."""
-        user_id = self.headers.get("X-User-Id", "").strip()
-        if not user_id:
-            return None
-        if user_id not in self.LOGGED_USER_IDS:
-            self.LOGGED_USER_IDS.add(user_id)
-            LOGGER.info("Authenticated user uid=%s", user_id)
-        return user_id
-
-    def send_json(self, status_code, payload):
-        """Serialize payload as JSON and send an HTTP response."""
-        body = json.dumps(payload).encode("utf-8")
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def send_static(self, filename, content_type):
-        """Serve a static file from the views directory."""
-        file_path = Path(__file__).parent.parent / "views" / filename
-        if not file_path.exists():
-            self.send_response(404)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(f"{filename} not found".encode("utf-8"))
-            return
-
-        self.send_response(200)
-        self.send_header("Content-Type", content_type)
-        self.end_headers()
-        self.wfile.write(file_path.read_bytes())
-
-    def send_index(self):
-        """Serve the index.html file."""
-        self.send_static("index.html", "text/html; charset=utf-8")
 
     def do_GET(self):  # pylint: disable=invalid-name
         """Handle GET requests for the calendar API."""
@@ -104,16 +63,8 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
     def _handle_post_settings(self):
         """Handle POST /api/settings."""
-        user_id = self.get_user_id()
-        if not user_id:
-            self.send_json(401, {"status": "error", "error": "User not authenticated"})
-            return
-        content_length = int(self.headers.get("Content-Length", "0"))
-        raw_body = self.rfile.read(content_length)
-        try:
-            data = json.loads(raw_body.decode("utf-8")) if raw_body else {}
-        except json.JSONDecodeError:
-            self.send_json(400, {"status": "error", "error": "Invalid JSON"})
+        user_id, data = self._require_authenticated_json()
+        if user_id is None:
             return
         ward = str(data.get("ward", "")).strip()
         settings = self.STORE.load_settings(user_id)
@@ -174,19 +125,9 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
     def _handle_post_calendar(self):  # pylint: disable=too-many-return-statements
         """Handle POST /api/calendar."""
-        user_id = self.get_user_id()
-        if not user_id:
-            self.send_json(401, {"status": "error", "error": "User not authenticated"})
-            return
-
-        content_length = int(self.headers.get("Content-Length", "0"))
-        raw_body = self.rfile.read(content_length)
-
-        try:
-            data = json.loads(raw_body.decode("utf-8")) if raw_body else {}
-        except json.JSONDecodeError:
-            LOGGER.warning("POST /api/calendar invalid json")
-            self.send_json(400, {"status": "error", "error": "Invalid JSON"})
+        user_id, data = self._require_authenticated_json()
+        if user_id is None:
+            LOGGER.warning("POST /api/calendar invalid json or unauthenticated")
             return
 
         day_of_week = str(data.get("day_of_week", "")).strip()
@@ -266,6 +207,3 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 },
             },
         )
-
-    def log_message(self, _fmt, *args):  # pylint: disable=arguments-differ
-        """Suppress default HTTP server console logging."""

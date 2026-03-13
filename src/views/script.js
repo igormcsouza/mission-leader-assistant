@@ -62,7 +62,13 @@ const NAV_ICONS = {
     <line x1="8" y1="2" x2="8" y2="6"></line>
     <line x1="16" y1="2" x2="16" y2="6"></line>
   </svg>`,
+  baptismalPlan: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C8.68 2 6 4.68 6 8c0 4.5 4.5 10 6 11.8C13.5 18 18 12.5 18 8c0-3.32-2.68-6-6-6z"></path>
+    <circle cx="12" cy="8" r="2.5"></circle>
+  </svg>`,
 };
+
+let currentRoute = "/calendar";
 
 const navigationItems = [
   {
@@ -70,20 +76,45 @@ const navigationItems = [
     label: "Calendário",
     icon: NAV_ICONS.calendar,
     route: "/calendar",
-    active: true,
+  },
+  {
+    id: "baptismal-plan",
+    label: "Planejamento Batismal",
+    icon: NAV_ICONS.baptismalPlan,
+    route: "/baptismal-plan",
   },
 ];
+
+const baptismalPlanView = document.getElementById("baptismalPlanView");
+
+function navigateTo(route) {
+  currentRoute = route;
+  if (route === "/calendar") {
+    calendarView.classList.remove("hidden");
+    baptismalPlanView.classList.add("hidden");
+  } else if (route === "/baptismal-plan") {
+    calendarView.classList.add("hidden");
+    baptismalPlanView.classList.remove("hidden");
+    initBaptismalPlanView();
+  }
+  // Update active nav item
+  const navList = sideDrawer.querySelector(".nav-items");
+  navList.querySelectorAll(".nav-item").forEach((li) => {
+    li.classList.toggle("active", li.dataset.route === route);
+  });
+}
 
 function buildNavItems() {
   const navList = sideDrawer.querySelector(".nav-items");
   navList.innerHTML = "";
   for (const item of navigationItems) {
     const li = document.createElement("li");
-    li.className = "nav-item" + (item.active ? " active" : "");
+    li.className = "nav-item" + (item.route === currentRoute ? " active" : "");
     li.dataset.route = item.route;
     li.setAttribute("role", "listitem");
     li.innerHTML = `${item.icon}<span>${item.label}</span>`;
     li.addEventListener("click", () => {
+      navigateTo(item.route);
       closeDrawer();
     });
     navList.appendChild(li);
@@ -823,9 +854,707 @@ drawerSignOutBtn.addEventListener("click", async () => {
 
 buildNavItems();
 
+// ── Baptismal Plan ────────────────────────────────────────────────────────
+
+const bpPlanList = document.getElementById("bpPlanList");
+const bpEmptyState = document.getElementById("bpEmptyState");
+const bpEditorContent = document.getElementById("bpEditorContent");
+const bpNewPlanBtn = document.getElementById("bpNewPlanBtn");
+const bpExportPdfBtn = document.getElementById("bpExportPdfBtn");
+const bpSaveStatus = document.getElementById("bpSaveStatus");
+const bpServiceDate = document.getElementById("bpServiceDate");
+const bpServiceTime = document.getElementById("bpServiceTime");
+const bpWard = document.getElementById("bpWard");
+const bpLocation = document.getElementById("bpLocation");
+const bpConductingLeader = document.getElementById("bpConductingLeader");
+const bpStatus = document.getElementById("bpStatus");
+const bpAddCandidateBtn = document.getElementById("bpAddCandidateBtn");
+const bpCandidatesList = document.getElementById("bpCandidatesList");
+const bpOrdinancesWitnessesList = document.getElementById("bpOrdinancesWitnessesList");
+const bpOrdinancesWitnessesEmpty = document.getElementById("bpOrdinancesWitnessesEmpty");
+const bpProgramList = document.getElementById("bpProgramList");
+const bpProgramEndList = document.getElementById("bpProgramEndList");
+const bpNotes = document.getElementById("bpNotes");
+
+let bpCurrentPlanId = null;
+let bpCurrentPlan = null;
+let bpPlanSummaries = [];
+let bpViewInitialized = false;
+let bpEditorReady = false;
+
+const BP_STATUS_PT = {
+  Draft: "Rascunho",
+  Scheduled: "Agendado",
+  Completed: "Realizado",
+  Archived: "Arquivado",
+};
+
+const BP_CANDIDATE_TYPE_PT = {
+  ChildOfRecord: "Filho de Registro",
+  Convert: "Converso",
+};
+
+const BP_PRIESTHOOD_PT = {
+  Priest: "Sacerdote",
+  "Melchizedek Priesthood": "Sacerdócio de Melquisedeque",
+};
+
+function bpFormatDate(dateStr) {
+  if (!dateStr) return "Sem data";
+  const [year, month, day] = dateStr.split("-");
+  if (!year || !month || !day) return dateStr;
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+                  "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${parseInt(day, 10)} ${months[parseInt(month, 10) - 1]} ${year}`;
+}
+
+function bpStatusClass(status) {
+  const map = { Scheduled: "status-scheduled", Completed: "status-completed", Archived: "status-archived" };
+  return map[status] || "";
+}
+
+// ── API ───────────────────────────────────────────────────────────────────
+
+function bpGetHeaders() {
+  const user = auth.currentUser;
+  return user ? { "X-User-Id": user.uid, "Content-Type": "application/json" } : {};
+}
+
+async function bpFetchPlans() {
+  const resp = await fetch("/api/baptismal-plans", { headers: bpGetHeaders() });
+  if (!resp.ok) return [];
+  const json = await resp.json();
+  return json.plans || [];
+}
+
+async function bpFetchPlan(planId) {
+  const resp = await fetch(`/api/baptismal-plans/${planId}`, { headers: bpGetHeaders() });
+  if (!resp.ok) return null;
+  const json = await resp.json();
+  return json.plan || null;
+}
+
+async function bpCreatePlan() {
+  const resp = await fetch("/api/baptismal-plans", {
+    method: "POST",
+    headers: bpGetHeaders(),
+    body: JSON.stringify({}),
+  });
+  if (!resp.ok) return null;
+  const json = await resp.json();
+  return json.plan || null;
+}
+
+async function bpSavePlan(planId, planData) {
+  const resp = await fetch(`/api/baptismal-plans/${planId}`, {
+    method: "PUT",
+    headers: bpGetHeaders(),
+    body: JSON.stringify(planData),
+  });
+  if (!resp.ok) return null;
+  const json = await resp.json();
+  return json.plan || null;
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────
+
+function bpRenderPlanList(summaries) {
+  bpPlanList.innerHTML = "";
+  if (!summaries.length) {
+    const li = document.createElement("li");
+    li.className = "bp-plan-item";
+    li.style.cursor = "default";
+    li.innerHTML = `<p style="color:var(--subtle);font-size:0.85rem;margin:0">Nenhum planejamento</p>`;
+    bpPlanList.appendChild(li);
+    return;
+  }
+  for (const s of summaries) {
+    const li = document.createElement("li");
+    li.className = "bp-plan-item" + (s.id === bpCurrentPlanId ? " active" : "");
+    li.dataset.planId = s.id;
+    li.setAttribute("role", "listitem");
+    const names = s.candidates && s.candidates.length
+      ? s.candidates.map((n) => n || "Sem nome").join(", ")
+      : "Sem candidatos";
+    const statusPt = BP_STATUS_PT[s.status] || s.status;
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "bp-plan-item-content";
+    contentDiv.innerHTML = `
+      <div class="bp-plan-item-date">${bpFormatDate(s.serviceDate)}</div>
+      <div class="bp-plan-item-names">Batismo: ${names}</div>
+      <span class="bp-plan-item-status ${bpStatusClass(s.status)}">${statusPt}</span>`;
+    contentDiv.addEventListener("click", () => bpLoadPlan(s.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "bp-plan-item-delete";
+    delBtn.type = "button";
+    delBtn.setAttribute("aria-label", "Excluir planejamento");
+    delBtn.title = "Excluir";
+    delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg" width="14" height="14"><polyline points="3,6 5,6 21,6"></polyline><path d="M19,6l-1,14H6L5,6"></path><path d="M10,11v6"></path><path d="M14,11v6"></path><path d="M9,6V4h6v2"></path></svg>`;
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      bpHandleDeletePlan(s.id);
+    });
+
+    li.appendChild(contentDiv);
+    li.appendChild(delBtn);
+    bpPlanList.appendChild(li);
+  }
+}
+
+function bpRenderCandidates(candidates) {
+  bpCandidatesList.innerHTML = "";
+  if (!candidates || !candidates.length) return;
+  candidates.forEach((c, idx) => {
+    const card = document.createElement("div");
+    card.className = "bp-candidate-card";
+    card.dataset.candidateId = c.id;
+    card.innerHTML = `
+      <div class="bp-candidate-card-header">
+        <span class="bp-candidate-card-title">Candidato ${idx + 1}</span>
+        <button class="bp-btn-danger bp-remove-candidate" type="button" data-cid="${c.id}">Remover</button>
+      </div>
+      <div class="bp-candidate-grid">
+        <div class="bp-field">
+          <label class="bp-label">Nome Completo</label>
+          <input class="bp-input bp-c-fullName" type="text" value="${_esc(c.fullName)}" placeholder="Nome completo" />
+        </div>
+        <div class="bp-field">
+          <label class="bp-label">Data de Nascimento</label>
+          <input class="bp-input bp-c-birthDate" type="date" value="${_esc(c.birthDate)}" />
+        </div>
+        <div class="bp-field">
+          <label class="bp-label">Tipo</label>
+          <select class="bp-select bp-c-candidateType">
+            <option value="Convert" ${c.candidateType === "Convert" ? "selected" : ""}>Converso</option>
+            <option value="ChildOfRecord" ${c.candidateType === "ChildOfRecord" ? "selected" : ""}>Filho de Registro</option>
+          </select>
+        </div>
+        <div class="bp-field bp-checkbox-field">
+          <input class="bp-checkbox bp-c-interviewCompleted" id="bpIC_${c.id}" type="checkbox" ${c.interviewCompleted ? "checked" : ""} />
+          <label class="bp-checkbox-label" for="bpIC_${c.id}">Entrevista Realizada</label>
+        </div>
+      </div>`;
+    bpCandidatesList.appendChild(card);
+
+    // blur / change auto-save on each field
+    card.querySelectorAll(".bp-input, .bp-select, .bp-checkbox").forEach((el) => {
+      const evt = el.type === "checkbox" ? "change" : "blur";
+      el.addEventListener(evt, () => { if (bpEditorReady) bpAutoSave(); });
+    });
+    card.querySelector(".bp-remove-candidate").addEventListener("click", () => {
+      bpRemoveCandidate(c.id);
+    });
+  });
+}
+
+function bpRenderOrdinancesAndWitnesses(candidates, ordinances, witnesses) {
+  bpOrdinancesWitnessesList.innerHTML = "";
+  if (!candidates || !candidates.length) {
+    bpOrdinancesWitnessesEmpty.classList.remove("hidden");
+    return;
+  }
+  bpOrdinancesWitnessesEmpty.classList.add("hidden");
+  const ordMap = {};
+  (ordinances || []).forEach((o) => { ordMap[o.candidateId] = o; });
+  const witMap = {};
+  (witnesses || []).forEach((w) => { witMap[w.candidateId] = w; });
+  candidates.forEach((c) => {
+    const o = ordMap[c.id] || {};
+    const w = witMap[c.id] || {};
+    const name = c.fullName || "Candidato";
+    const w1 = w.witness1 || "";
+    const w2 = w.witness2 || "";
+    const warnHtml = (!w1 || !w2)
+      ? `<p class="bp-warning">⚠ Mínimo de 2 testemunhas por batismo.</p>` : "";
+    const card = document.createElement("div");
+    card.className = "bp-ord-witness-card";
+    card.dataset.candidateId = c.id;
+    card.innerHTML = `
+      <div class="bp-ord-card-title">${_esc(name)}</div>
+      <div class="bp-ord-witness-grid">
+        <div class="bp-field">
+          <label class="bp-label">Batizado por</label>
+          <input class="bp-input bp-o-baptizerName" type="text" value="${_esc(o.baptizerName || "")}" placeholder="ex: Élder Silva" />
+        </div>
+        <div class="bp-field">
+          <label class="bp-label">Sacerdócio</label>
+          <select class="bp-select bp-o-baptizerPriesthood">
+            <option value="">Selecionar</option>
+            <option value="Priest" ${o.baptizerPriesthood === "Priest" ? "selected" : ""}>Sacerdote</option>
+            <option value="Melchizedek Priesthood" ${o.baptizerPriesthood === "Melchizedek Priesthood" ? "selected" : ""}>Sacerdócio de Melquisedeque</option>
+          </select>
+        </div>
+        <div class="bp-field">
+          <label class="bp-label">Confirmado por</label>
+          <input class="bp-input bp-o-confirmationBy" type="text" value="${_esc(o.confirmationBy || "")}" placeholder="ex: João Lima" />
+        </div>
+        <div class="bp-field">
+          <label class="bp-label">Testemunha 1</label>
+          <input class="bp-input bp-w-witness1" type="text" value="${_esc(w1)}" placeholder="ex: Pedro Alves" />
+        </div>
+        <div class="bp-field">
+          <label class="bp-label">Testemunha 2</label>
+          <input class="bp-input bp-w-witness2" type="text" value="${_esc(w2)}" placeholder="ex: Carlos Neves" />
+        </div>
+      </div>
+      ${warnHtml}`;
+    bpOrdinancesWitnessesList.appendChild(card);
+    card.querySelectorAll(".bp-input, .bp-select").forEach((el) => {
+      el.addEventListener("blur", () => { if (bpEditorReady) bpAutoSave(); });
+      el.addEventListener("change", () => { if (bpEditorReady) bpAutoSave(); });
+    });
+  });
+}
+
+function bpRenderTalkRow(container, talk) {
+  const row = document.createElement("div");
+  row.className = "bp-talk-row";
+  row.dataset.talkId = talk.id;
+  row.innerHTML = `
+    <input class="bp-input bp-t-person" type="text" value="${_esc(talk.talkPerson || "")}" placeholder="Nome do orador" />
+    <input class="bp-input bp-t-theme" type="text" value="${_esc(talk.talkTheme || "")}" placeholder="Tema" />
+    <button class="bp-btn-danger bp-talk-remove" type="button" aria-label="Remover discurso">×</button>`;
+  row.querySelector("button").addEventListener("click", () => {
+    if (bpEditorReady) bpHandleRemoveTalk(talk.id);
+  });
+  row.querySelectorAll(".bp-input").forEach((el) => {
+    el.addEventListener("blur", () => { if (bpEditorReady) bpAutoSave(); });
+  });
+  container.appendChild(row);
+}
+
+// Placeholders for each static program item (indexed by position in the program array):
+// [0]=Hino Inicial, [1]=Oração Inicial, [2]=Seleção Musical,
+// [3]=Testemunhos, [4]=Hino Final, [5]=Oração Final
+const BP_PROGRAM_PLACEHOLDERS = [
+  "ex: 92 - Escolhemos o Caminho",      // Hino Inicial
+  "ex: João Silva",                       // Oração Inicial
+  "ex: 193 - Sou um filho de Deus",      // Seleção Musical
+  "ex: Maria Santos, Pedro Lima...",      // Testemunhos
+  "ex: 218 - Eu Sou Filho de Deus",      // Hino Final
+  "ex: Ana Lima",                         // Oração Final
+];
+
+function bpRenderProgram(program, talks) {
+  bpProgramList.innerHTML = "";
+  bpProgramEndList.innerHTML = "";
+  const items = program || [];
+
+  function renderStaticItem(item, idx) {
+    const row = document.createElement("div");
+    row.className = "bp-program-item";
+    row.dataset.programIndex = idx;
+    const placeholder = BP_PROGRAM_PLACEHOLDERS[idx] || "";
+    row.innerHTML = `
+      <span class="bp-program-item-name">${_esc(item.item)}</span>
+      <input class="bp-input bp-p-assignee" type="text" value="${_esc(item.assignee || "")}" placeholder="${_esc(placeholder)}" />`;
+    row.querySelector(".bp-p-assignee").addEventListener("blur", () => {
+      if (bpEditorReady) bpAutoSave();
+    });
+    return row;
+  }
+
+  // Pair 1: Hino Inicial + Oração Inicial → bpProgramList
+  const pairStart = document.createElement("div");
+  pairStart.className = "bp-program-pair";
+  if (items[0]) pairStart.appendChild(renderStaticItem(items[0], 0));
+  if (items[1]) pairStart.appendChild(renderStaticItem(items[1], 1));
+  bpProgramList.appendChild(pairStart);
+
+  // Talks subsection → bpProgramList
+  const talksSection = document.createElement("div");
+  talksSection.className = "bp-talks-section";
+  talksSection.innerHTML = `
+    <div class="bp-talks-header">
+      <span class="bp-talks-title">Discursos</span>
+      <button id="bpAddTalkBtn" class="bp-btn-secondary bp-btn-small" type="button">+ Adicionar Discurso</button>
+    </div>`;
+  const talksBody = document.createElement("div");
+  talksBody.id = "bpTalksBody";
+  talksSection.appendChild(talksBody);
+  bpProgramList.appendChild(talksSection);
+  (talks || []).forEach((talk) => bpRenderTalkRow(talksBody, talk));
+  talksSection.querySelector("#bpAddTalkBtn").addEventListener("click", () => {
+    if (bpEditorReady) bpHandleAddTalk();
+  });
+
+  // Seleção Musical + Testemunhos → bpProgramEndList
+  if (items[2]) bpProgramEndList.appendChild(renderStaticItem(items[2], 2));
+  if (items[3]) bpProgramEndList.appendChild(renderStaticItem(items[3], 3));
+
+  // Pair 2: Hino Final + Oração Final → bpProgramEndList
+  const pairEnd = document.createElement("div");
+  pairEnd.className = "bp-program-pair";
+  if (items[4]) pairEnd.appendChild(renderStaticItem(items[4], 4));
+  if (items[5]) pairEnd.appendChild(renderStaticItem(items[5], 5));
+  bpProgramEndList.appendChild(pairEnd);
+}
+
+function bpRenderEditor(plan) {
+  bpEditorReady = false;
+  bpEmptyState.classList.add("hidden");
+  bpEditorContent.classList.remove("hidden");
+
+  bpServiceDate.value = plan.serviceDate || "";
+  bpServiceTime.value = plan.serviceTime || "";
+  bpWard.value = plan.ward || "";
+  bpLocation.value = plan.location || "";
+  bpConductingLeader.value = plan.conductingLeader || "";
+  bpStatus.value = plan.status || "Draft";
+  bpNotes.value = plan.notes || "";
+
+  bpRenderCandidates(plan.candidates || []);
+  bpRenderOrdinancesAndWitnesses(
+    plan.candidates || [], plan.ordinances || [], plan.witnesses || []
+  );
+  bpRenderProgram(plan.program || [], plan.talks || []);
+
+  bpEditorReady = true;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+
+function _esc(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function bpCollectPlanData() {
+  const candidates = [];
+  bpCandidatesList.querySelectorAll(".bp-candidate-card").forEach((card) => {
+    candidates.push({
+      id: card.dataset.candidateId,
+      fullName: card.querySelector(".bp-c-fullName").value,
+      birthDate: card.querySelector(".bp-c-birthDate").value,
+      candidateType: card.querySelector(".bp-c-candidateType").value,
+      interviewCompleted: card.querySelector(".bp-c-interviewCompleted").checked,
+    });
+  });
+
+  const ordinances = [];
+  const witnesses = [];
+  bpOrdinancesWitnessesList.querySelectorAll(".bp-ord-witness-card").forEach((card) => {
+    const cid = card.dataset.candidateId;
+    ordinances.push({
+      candidateId: cid,
+      baptizerName: card.querySelector(".bp-o-baptizerName").value,
+      baptizerPriesthood: card.querySelector(".bp-o-baptizerPriesthood").value,
+      confirmationBy: card.querySelector(".bp-o-confirmationBy").value,
+    });
+    witnesses.push({
+      candidateId: cid,
+      witness1: card.querySelector(".bp-w-witness1").value,
+      witness2: card.querySelector(".bp-w-witness2").value,
+    });
+  });
+
+  const program = [];
+  bpProgramList.querySelectorAll(".bp-program-item").forEach((row) => {
+    const assignee = row.querySelector(".bp-p-assignee").value;
+    const itemName = row.querySelector(".bp-program-item-name").textContent;
+    program.push({ item: itemName, assignee });
+  });
+  bpProgramEndList.querySelectorAll(".bp-program-item").forEach((row) => {
+    const assignee = row.querySelector(".bp-p-assignee").value;
+    const itemName = row.querySelector(".bp-program-item-name").textContent;
+    program.push({ item: itemName, assignee });
+  });
+
+  const talks = [];
+  const talksBody = document.getElementById("bpTalksBody");
+  if (talksBody) {
+    talksBody.querySelectorAll(".bp-talk-row").forEach((row) => {
+      talks.push({
+        id: row.dataset.talkId,
+        talkPerson: row.querySelector(".bp-t-person").value,
+        talkTheme: row.querySelector(".bp-t-theme").value,
+      });
+    });
+  }
+
+  return {
+    serviceDate: bpServiceDate.value,
+    serviceTime: bpServiceTime.value,
+    ward: bpWard.value,
+    location: bpLocation.value,
+    conductingLeader: bpConductingLeader.value,
+    status: bpStatus.value,
+    candidates,
+    ordinances,
+    witnesses,
+    program,
+    talks,
+    notes: bpNotes.value,
+  };
+}
+
+async function bpAutoSave() {
+  if (!bpCurrentPlanId) return;
+  bpSaveStatus.textContent = "Salvando…";
+  const data = bpCollectPlanData();
+  const updated = await bpSavePlan(bpCurrentPlanId, data);
+  if (updated) {
+    bpCurrentPlan = updated;
+    bpSaveStatus.textContent = "Salvo";
+    // Refresh summary list entry
+    const idx = bpPlanSummaries.findIndex((p) => p.id === bpCurrentPlanId);
+    const summary = {
+      id: updated.id,
+      serviceDate: updated.serviceDate,
+      candidates: (updated.candidates || []).map((c) => c.fullName || ""),
+      status: updated.status,
+    };
+    if (idx >= 0) {
+      bpPlanSummaries[idx] = summary;
+    } else {
+      bpPlanSummaries.unshift(summary);
+    }
+    bpRenderPlanList(bpPlanSummaries);
+    setTimeout(() => { bpSaveStatus.textContent = ""; }, 2000);
+  } else {
+    bpSaveStatus.textContent = "Erro ao salvar";
+  }
+}
+
+async function bpLoadPlan(planId) {
+  bpEditorReady = false;
+  const plan = await bpFetchPlan(planId);
+  if (!plan) return;
+  bpCurrentPlanId = planId;
+  bpCurrentPlan = plan;
+  bpRenderEditor(plan);
+  bpRenderPlanList(bpPlanSummaries);
+}
+
+async function bpHandleNewPlan() {
+  bpEditorReady = false;
+  const plan = await bpCreatePlan();
+  if (!plan) return;
+  bpCurrentPlanId = plan.id;
+  bpCurrentPlan = plan;
+  const summary = {
+    id: plan.id,
+    serviceDate: plan.serviceDate,
+    candidates: [],
+    status: plan.status,
+  };
+  bpPlanSummaries.unshift(summary);
+  bpRenderPlanList(bpPlanSummaries);
+  bpRenderEditor(plan);
+}
+
+async function bpRemoveCandidate(candidateId) {
+  if (!bpCurrentPlan) return;
+  bpEditorReady = false;
+  bpCurrentPlan.candidates = (bpCurrentPlan.candidates || []).filter((c) => c.id !== candidateId);
+  bpCurrentPlan.ordinances = (bpCurrentPlan.ordinances || []).filter((o) => o.candidateId !== candidateId);
+  bpCurrentPlan.witnesses = (bpCurrentPlan.witnesses || []).filter((w) => w.candidateId !== candidateId);
+  bpRenderCandidates(bpCurrentPlan.candidates);
+  bpRenderOrdinancesAndWitnesses(
+    bpCurrentPlan.candidates, bpCurrentPlan.ordinances, bpCurrentPlan.witnesses
+  );
+  bpEditorReady = true;
+  bpAutoSave();
+}
+
+function bpHandleAddCandidate() {
+  if (!bpCurrentPlan) return;
+  bpEditorReady = false;
+  const newId = `c_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const newCandidate = {
+    id: newId,
+    fullName: "",
+    birthDate: "",
+    candidateType: "Convert",
+    interviewCompleted: false,
+  };
+  bpCurrentPlan.candidates = [...(bpCurrentPlan.candidates || []), newCandidate];
+  bpCurrentPlan.ordinances = [...(bpCurrentPlan.ordinances || []), { candidateId: newId, baptizerName: "", baptizerPriesthood: "", confirmationBy: "" }];
+  bpCurrentPlan.witnesses = [...(bpCurrentPlan.witnesses || []), { candidateId: newId, witness1: "", witness2: "" }];
+  bpRenderCandidates(bpCurrentPlan.candidates);
+  bpRenderOrdinancesAndWitnesses(
+    bpCurrentPlan.candidates, bpCurrentPlan.ordinances, bpCurrentPlan.witnesses
+  );
+  bpEditorReady = true;
+  bpAutoSave();
+}
+
+async function initBaptismalPlanView() {
+  if (bpViewInitialized) return;
+  bpViewInitialized = true;
+  const plans = await bpFetchPlans();
+  bpPlanSummaries = plans;
+  bpRenderPlanList(plans);
+}
+
+function bpHandleAddTalk() {
+  if (!bpCurrentPlan) return;
+  const newId = `t_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const newTalk = { id: newId, talkPerson: "", talkTheme: "" };
+  bpCurrentPlan.talks = [...(bpCurrentPlan.talks || []), newTalk];
+  const talksBody = document.getElementById("bpTalksBody");
+  if (talksBody) bpRenderTalkRow(talksBody, newTalk);
+  bpAutoSave();
+}
+
+function bpHandleRemoveTalk(talkId) {
+  if (!bpCurrentPlan) return;
+  bpCurrentPlan.talks = (bpCurrentPlan.talks || []).filter((t) => t.id !== talkId);
+  const talksBody = document.getElementById("bpTalksBody");
+  if (talksBody) {
+    talksBody.innerHTML = "";
+    (bpCurrentPlan.talks || []).forEach((t) => bpRenderTalkRow(talksBody, t));
+  }
+  bpAutoSave();
+}
+
+async function bpApiDeletePlan(planId) {
+  const resp = await fetch(`/api/baptismal-plans/${planId}`, {
+    method: "DELETE",
+    headers: bpGetHeaders(),
+  });
+  return resp.ok;
+}
+
+async function bpHandleDeletePlan(planId) {
+  if (!window.confirm("Tem certeza que deseja excluir este planejamento? Esta ação não pode ser desfeita.")) return;
+  const ok = await bpApiDeletePlan(planId);
+  if (!ok) return;
+  bpPlanSummaries = bpPlanSummaries.filter((p) => p.id !== planId);
+  if (bpCurrentPlanId === planId) {
+    bpCurrentPlanId = null;
+    bpCurrentPlan = null;
+    bpEditorContent.classList.add("hidden");
+    bpEmptyState.classList.remove("hidden");
+  }
+  bpRenderPlanList(bpPlanSummaries);
+}
+
+// ── PDF Export ────────────────────────────────────────────────────────────
+
+function bpExportPdf() {
+  if (!bpCurrentPlan) return;
+  const plan = bpCollectPlanData();
+  const dateStr = plan.serviceDate
+    ? plan.serviceDate
+    : "sem-data";
+  const statusPt = BP_STATUS_PT[plan.status] || plan.status;
+
+  const candidateRows = (plan.candidates || []).map((c, i) => {
+    const typePt = BP_CANDIDATE_TYPE_PT[c.candidateType] || c.candidateType;
+    const interv = c.interviewCompleted ? "Sim" : "Não";
+    return `<tr>
+      <td>${i + 1}</td><td>${_esc(c.fullName)}</td><td>${_esc(c.birthDate)}</td>
+      <td>${typePt}</td><td>${interv}</td>
+    </tr>`;
+  }).join("");
+
+  const ordMap = {};
+  (plan.ordinances || []).forEach((o) => { ordMap[o.candidateId] = o; });
+  const witMap = {};
+  (plan.witnesses || []).forEach((w) => { witMap[w.candidateId] = w; });
+
+  const ordWitRows = (plan.candidates || []).map((c) => {
+    const o = ordMap[c.id] || {};
+    const w = witMap[c.id] || {};
+    const priPt = BP_PRIESTHOOD_PT[o.baptizerPriesthood] || o.baptizerPriesthood || "";
+    return `<tr>
+      <td>${_esc(c.fullName)}</td>
+      <td>${_esc(o.baptizerName || "")}</td>
+      <td>${priPt}</td>
+      <td>${_esc(o.confirmationBy || "")}</td>
+      <td>${_esc(w.witness1 || "")}</td>
+      <td>${_esc(w.witness2 || "")}</td>
+    </tr>`;
+  }).join("");
+
+  const talkRows = (plan.talks || []).map((t) =>
+    `<tr><td>${_esc(t.talkPerson || "")}</td><td>${_esc(t.talkTheme || "")}</td></tr>`
+  ).join("");
+
+  // Split program into start (items 0-1) and end (items 2-5)
+  const progStart = (plan.program || []).slice(0, 2);
+  const progEnd = (plan.program || []).slice(2);
+  const progStartRows = progStart.map((item) =>
+    `<tr><td>${_esc(item.item)}</td><td>${_esc(item.assignee || "")}</td></tr>`
+  ).join("");
+  const progEndRows = progEnd.map((item) =>
+    `<tr><td>${_esc(item.item)}</td><td>${_esc(item.assignee || "")}</td></tr>`
+  ).join("");
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>planejamento-batismal-${dateStr}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #222; margin: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  h2 { font-size: 14px; margin: 20px 0 8px; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
+  th { background: #f0f0f0; font-weight: 600; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; margin-bottom: 12px; }
+  .meta-item { font-size: 12px; }
+  .meta-label { color: #666; font-size: 11px; }
+  .notes { background: #f9f9f9; border: 1px solid #ddd; padding: 8px; border-radius: 4px; white-space: pre-wrap; }
+  @media print { body { margin: 12px; } }
+</style>
+</head><body>
+<h1>Planejamento Batismal</h1>
+<div class="meta-grid">
+  <div class="meta-item"><span class="meta-label">Data do Batismo</span><br>${_esc(bpFormatDate(plan.serviceDate))}</div>
+  <div class="meta-item"><span class="meta-label">Horário</span><br>${_esc(plan.serviceTime || "")}</div>
+  <div class="meta-item"><span class="meta-label">Ala</span><br>${_esc(plan.ward || "")}</div>
+  <div class="meta-item"><span class="meta-label">Local</span><br>${_esc(plan.location || "")}</div>
+  <div class="meta-item"><span class="meta-label">Líder que preside</span><br>${_esc(plan.conductingLeader || "")}</div>
+  <div class="meta-item"><span class="meta-label">Status</span><br>${_esc(statusPt)}</div>
+</div>
+
+<h2>Candidatos</h2>
+<table><thead><tr>
+  <th>#</th><th>Nome Completo</th><th>Nasc.</th><th>Tipo</th><th>Entrevista</th>
+</tr></thead><tbody>${candidateRows}</tbody></table>
+
+${progStartRows ? `<h2>Início da Reunião</h2><table><tbody>${progStartRows}</tbody></table>` : ""}
+
+${talkRows ? `<h2>Discursos</h2><table><thead><tr><th>Orador</th><th>Tema</th></tr></thead><tbody>${talkRows}</tbody></table>` : ""}
+
+<h2>Ordenanças e Testemunhas</h2>
+<table><thead><tr>
+  <th>Candidato</th><th>Batizado por</th><th>Sacerdócio</th><th>Confirmado por</th><th>Testemunha 1</th><th>Testemunha 2</th>
+</tr></thead><tbody>${ordWitRows}</tbody></table>
+
+${progEndRows ? `<h2>Continuação do Programa</h2><table><tbody>${progEndRows}</tbody></table>` : ""}
+
+${plan.notes ? `<h2>Observações</h2><div class="notes">${_esc(plan.notes)}</div>` : ""}
+<script>window.onload = function(){ window.print(); }<\/script>
+</body></html>`;
+
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(html);
+  win.document.title = `planejamento-batismal-${dateStr}`;
+  win.document.close();
+}
+
+// ── Wire up Baptismal Plan events ─────────────────────────────────────────
+
+bpNewPlanBtn.addEventListener("click", bpHandleNewPlan);
+bpAddCandidateBtn.addEventListener("click", bpHandleAddCandidate);
+bpExportPdfBtn.addEventListener("click", bpExportPdf);
+
+[bpServiceDate, bpServiceTime, bpWard, bpLocation, bpConductingLeader].forEach((el) => {
+  el.addEventListener("blur", () => { if (bpEditorReady) bpAutoSave(); });
+});
+bpStatus.addEventListener("change", () => { if (bpEditorReady) bpAutoSave(); });
+bpNotes.addEventListener("blur", () => { if (bpEditorReady) bpAutoSave(); });
+
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     calendarView.classList.add("hidden");
+    baptismalPlanView.classList.add("hidden");
     menuToggleBtn.classList.add("hidden");
     loginView.classList.remove("hidden");
     loginStatusEl.textContent = "";
@@ -834,14 +1563,23 @@ onAuthStateChanged(auth, (user) => {
     loginBtnText.textContent = "Entrar com Google";
     googleLoginBtn.disabled = false;
     currentWard = "";
+    currentRoute = "/calendar";
+    bpCurrentPlanId = null;
+    bpCurrentPlan = null;
+    bpPlanSummaries = [];
+    bpViewInitialized = false;
     closeDrawer();
     updateDrawerUser(null);
     return;
   }
 
   loginView.classList.add("hidden");
-  calendarView.classList.remove("hidden");
   menuToggleBtn.classList.remove("hidden");
+  if (currentRoute === "/baptismal-plan") {
+    baptismalPlanView.classList.remove("hidden");
+  } else {
+    calendarView.classList.remove("hidden");
+  }
   updateDrawerUser(user);
   if (!isCalendarInitialized) {
     renderHeader();
