@@ -973,7 +973,12 @@ function bpRenderPlanList(summaries) {
     bpPlanList.appendChild(li);
     return;
   }
-  for (const s of summaries) {
+  const sorted = [...summaries].sort((a, b) => {
+    const da = a.serviceDate || "";
+    const db = b.serviceDate || "";
+    return db.localeCompare(da);
+  });
+  for (const s of sorted) {
     const li = document.createElement("li");
     li.className = "bp-plan-item" + (s.id === bpCurrentPlanId ? " active" : "");
     li.dataset.planId = s.id;
