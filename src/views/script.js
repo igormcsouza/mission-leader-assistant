@@ -976,6 +976,9 @@ function bpRenderPlanList(summaries) {
   const sorted = [...summaries].sort((a, b) => {
     const da = a.serviceDate || "";
     const db = b.serviceDate || "";
+    if (!da && !db) return 0;
+    if (!da) return -1;
+    if (!db) return 1;
     return db.localeCompare(da);
   });
   for (const s of sorted) {
@@ -1354,6 +1357,7 @@ async function bpHandleNewPlan() {
   };
   bpPlanSummaries.unshift(summary);
   bpRenderPlanList(bpPlanSummaries);
+  bpPlanList.scrollLeft = 0;
   bpRenderEditor(plan);
 }
 
