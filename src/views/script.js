@@ -973,7 +973,15 @@ function bpRenderPlanList(summaries) {
     bpPlanList.appendChild(li);
     return;
   }
-  for (const s of summaries) {
+  const sorted = [...summaries].sort((a, b) => {
+    const da = a.serviceDate || "";
+    const db = b.serviceDate || "";
+    if (!da && !db) return 0;
+    if (!da) return -1;
+    if (!db) return 1;
+    return db.localeCompare(da);
+  });
+  for (const s of sorted) {
     const li = document.createElement("li");
     li.className = "bp-plan-item" + (s.id === bpCurrentPlanId ? " active" : "");
     li.dataset.planId = s.id;
@@ -1349,6 +1357,7 @@ async function bpHandleNewPlan() {
   };
   bpPlanSummaries.unshift(summary);
   bpRenderPlanList(bpPlanSummaries);
+  bpPlanList.scrollLeft = 0;
   bpRenderEditor(plan);
 }
 

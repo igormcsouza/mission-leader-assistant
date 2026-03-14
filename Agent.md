@@ -85,6 +85,7 @@ Whenever you make changes to frontend components (`src/views/index.html`, `src/v
 - **Preserve existing patterns.** Follow the conventions already established in the codebase (handler structure, store abstraction, frontend patterns, etc.).
 - **Never commit secrets.** The `service-account.json` and any `.env` file must never be committed. Use environment variables for all credentials (see `HOWTO.md`).
 - **Backward compatibility.** The JSON store uses a Firestore-compatible schema. If you modify storage keys or shapes, verify that existing stored data will still be read correctly.
+- **Responsive UI.** Whenever making changes to views (`src/views/index.html`, `src/views/script.js`, `src/views/styles.css`), always ensure the UI is responsive and works correctly on small screens and mobile devices. Use `@media (max-width: 900px)` blocks to apply mobile-only styles without affecting normal screens.
 
 ---
 
