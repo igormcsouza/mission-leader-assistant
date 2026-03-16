@@ -370,8 +370,20 @@ tbody td.week-cell {
 }
 
 @media (max-width: 900px) {
+  .app-nav-bar {
+    position: static;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 12px;
+    width: 100%;
+  }
+
+  .app-nav-title {
+    display: inline;
+  }
+
   .page {
-    padding: 60px 10px 10px;
+    padding: 10px;
     align-items: flex-start;
   }
 
@@ -564,11 +576,27 @@ tbody td.week-cell {
 
 /* ── Side Drawer ─────────────────────────────────────── */
 
-.menu-toggle-btn {
+.app-nav-bar {
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: 0;
+  left: 0;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.app-nav-title {
+  display: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.menu-toggle-btn {
+  flex-shrink: 0;
 }
 
 .drawer-backdrop {
