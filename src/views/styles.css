@@ -17,11 +17,10 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: radial-gradient(circle at top, #142133 0%, var(--bg) 42%, #0a1018 100%);
   color: var(--ink);
-  padding-top: var(--nav-height); /* reserve space for fixed .app-nav-bar */
 }
 
 .page {
-  min-height: calc(100vh - var(--nav-height)); /* subtract fixed nav bar height */
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -412,10 +411,6 @@ tbody td.week-cell {
     text-align: center;
   }
 
-  body {
-    padding-top: 0; /* nav bar is in document flow on mobile */
-  }
-
   .page {
     padding: 10px;
     align-items: flex-start;
@@ -703,6 +698,35 @@ tbody td.week-cell {
 
 
 /* ── Baptismal Plan View ─────────────────────────────── */
+
+/* Thin, subtle scrollbar for plan panels */
+.bp-plan-list,
+.bp-editor-area {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.bp-plan-list::-webkit-scrollbar,
+.bp-editor-area::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.bp-plan-list::-webkit-scrollbar-track,
+.bp-editor-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bp-plan-list::-webkit-scrollbar-thumb,
+.bp-editor-area::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+
+.bp-plan-list::-webkit-scrollbar-thumb:hover,
+.bp-editor-area::-webkit-scrollbar-thumb:hover {
+  background: var(--subtle);
+}
 
 .bp-wrap {
   position: fixed;
