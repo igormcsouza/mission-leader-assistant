@@ -370,6 +370,32 @@ tbody td.week-cell {
   stroke: #d9e5f5;
 }
 
+/* ── Nav Bar ─────────────────────────────────────────── */
+
+.app-nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.app-nav-title {
+  display: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.menu-toggle-btn {
+  flex-shrink: 0;
+}
+
 @media (max-width: 900px) {
   .app-nav-bar {
     position: static;
@@ -582,30 +608,6 @@ tbody td.week-cell {
 }
 
 /* ── Side Drawer ─────────────────────────────────────── */
-
-.app-nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-}
-
-.app-nav-title {
-  display: none;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-.menu-toggle-btn {
-  flex-shrink: 0;
-}
 
 .drawer-backdrop {
   position: fixed;
