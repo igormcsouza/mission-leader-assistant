@@ -112,8 +112,8 @@ thead th.week-head {
 tbody td {
   border: 1px solid var(--line);
   vertical-align: top;
-  padding: 8px;
-  height: 102px;
+  padding: 6px;
+  height: 88px;
 }
 
 tbody td.week-cell {
@@ -129,7 +129,7 @@ tbody td.week-cell {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .meta {
@@ -149,21 +149,21 @@ tbody td.week-cell {
 .name-input {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 8px;
-  font-size: 0.95rem;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 0.83rem;
   background: #0f1823;
   color: var(--ink);
 }
 
 .name-input.secondary {
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .editable-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .pday-toggle {
@@ -491,6 +491,18 @@ tbody td.week-cell {
   font-size: 0.95rem;
   background: #0f1823;
   color: var(--ink);
+}
+
+.modal-field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  background: #0f1823;
+  color: var(--ink);
+  color-scheme: dark;
+  cursor: pointer;
 }
 
 .modal-actions {
