@@ -166,6 +166,7 @@ const calendarSubtitleEl = document.getElementById("calendarSubtitle");
 const slotTitleInput = document.getElementById("slotTitleInput");
 const slotSubtitleInput = document.getElementById("slotSubtitleInput");
 const couplesSlider = document.getElementById("couplesSlider");
+const couplesSliderVal = document.getElementById("couplesSliderVal");
 
 const DEFAULT_TITLES = [
   "Calendário de Almoço Missionário",
@@ -203,9 +204,11 @@ function updateSettingsSlotButtons() {
 
 function applyCouplesToUI() {
   calendarView.dataset.couples = String(currentNumCouples);
-  couplesSlider.querySelectorAll(".couples-btn").forEach((btn) => {
-    btn.classList.toggle("active", Number(btn.dataset.value) === currentNumCouples);
-  });
+  couplesSlider.value = String(currentNumCouples);
+  couplesSliderVal.textContent = String(currentNumCouples);
+  // update gradient fill percentage: (val - min) / (max - min) * 100
+  const pct = ((currentNumCouples - 1) / 2) * 100;
+  couplesSlider.style.setProperty("--pct", String(pct));
 }
 
 function populateSettingsSlotFields() {
@@ -812,11 +815,9 @@ async function persistSettings() {
   const ward = wardInput.value.trim();
   saveSettingsBtn.disabled = true;
   try {
-    const activeBtn = couplesSlider.querySelector(".couples-btn.active")
-      || couplesSlider.querySelector(".couples-btn");
     const body = {
       ward,
-      num_couples: activeBtn ? parseInt(activeBtn.dataset.value, 10) : 2,
+      num_couples: parseInt(couplesSlider.value, 10) || 2,
       [`slot_${settingsEditProfile}_title`]: slotTitleInput.value.trim(),
       [`slot_${settingsEditProfile}_subtitle`]: slotSubtitleInput.value.trim(),
     };
@@ -886,11 +887,11 @@ document.querySelectorAll(".modal-slot-switcher .slot-btn").forEach((btn) => {
   });
 });
 
-couplesSlider.querySelectorAll(".couples-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    couplesSlider.querySelectorAll(".couples-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-  });
+couplesSlider.addEventListener("input", () => {
+  const val = parseInt(couplesSlider.value, 10);
+  couplesSliderVal.textContent = String(val);
+  const pct = ((val - 1) / 2) * 100;
+  couplesSlider.style.setProperty("--pct", String(pct));
 });
 googleLoginBtn.addEventListener("click", async () => {
   loginStatusEl.textContent = "";
