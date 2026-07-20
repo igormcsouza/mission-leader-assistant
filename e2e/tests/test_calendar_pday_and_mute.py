@@ -1,6 +1,7 @@
 """Covers the per-week PDAY override ("P" button) and mute-day ("M" button) controls
 that live alongside the core calendar rendering.
 """
+# pylint: disable=missing-function-docstring
 
 
 def test_pday_override_moves_names_into_monday_preview(calendar_page):

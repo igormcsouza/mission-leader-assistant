@@ -3,6 +3,7 @@
 Structural/behavioral checks only (element visibility, overlay behavior, scroll
 capability) rather than pixel snapshots, since the underlying commits are CSS-only.
 """
+# pylint: disable=missing-function-docstring
 import pytest
 
 

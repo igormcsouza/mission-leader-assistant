@@ -1,6 +1,7 @@
 """Covers multi-profile (Perfil) calendar management (commit 999ded9): two independent
 calendars sharing the same UI, switched via the topbar slot buttons.
 """
+# pylint: disable=missing-function-docstring
 
 
 def test_exactly_two_profile_buttons(calendar_page):

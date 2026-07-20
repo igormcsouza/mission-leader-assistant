@@ -1,4 +1,5 @@
 """Covers the collapsible side navigation drawer (commit 85ebcd9)."""
+# pylint: disable=missing-function-docstring,unused-argument
 
 
 def test_drawer_starts_closed(calendar_page, side_drawer):

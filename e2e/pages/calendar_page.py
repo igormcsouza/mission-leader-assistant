@@ -1,4 +1,5 @@
 """Page object for the lunch/visit calendar view (#calendarView)."""
+# pylint: disable=missing-function-docstring
 from .base_page import BasePage
 
 
@@ -12,9 +13,9 @@ class CalendarPage(BasePage):
     """
 
     def day_cell(self, day_of_week, week_number=2):
-        return self.page.locator(
-            f'#calendarBody tr[data-week-number="{week_number}"] td[data-day-of-week="{day_of_week}"]'
-        )
+        row = f'tr[data-week-number="{week_number}"]'
+        cell = f'td[data-day-of-week="{day_of_week}"]'
+        return self.page.locator(f"#calendarBody {row} {cell}")
 
     def name_input(self, day_of_week, slot=1, week_number=2):
         cell = self.day_cell(day_of_week, week_number)

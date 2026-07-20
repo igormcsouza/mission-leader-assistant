@@ -4,6 +4,7 @@ The export opens a same-origin popup, writes a printable HTML document into it, 
 calls `window.print()` on load. Headless Chromium's print dialog cannot be driven by
 Playwright, so this only asserts on the popup's rendered document content.
 """
+# pylint: disable=missing-function-docstring
 
 
 def test_export_opens_popup_with_plan_content(baptismal_plan_page):

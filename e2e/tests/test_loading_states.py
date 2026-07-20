@@ -4,6 +4,7 @@ calendar status spinner and the baptismal-plan autosave status text.
 Both tests use the `slow_network` fixture (CDP-level request throttling) to create
 a window in which the transient "loading" state can be observed.
 """
+# pylint: disable=missing-function-docstring,unused-argument
 
 
 def test_calendar_spinner_shows_while_initial_data_loads(slow_network, live_server, page):

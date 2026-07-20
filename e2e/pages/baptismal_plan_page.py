@@ -1,4 +1,5 @@
 """Page object for the baptismal plan view (#baptismalPlanView)."""
+# pylint: disable=missing-function-docstring
 from .base_page import BasePage
 
 # Autosave round-trips against the local dev server complete in well under
@@ -49,8 +50,10 @@ class BaptismalPlanPage(BasePage):
         self.page.once("dialog", lambda dialog: dialog.accept())
         self.page.click(f'.bp-plan-item[data-plan-id="{plan_id}"] .bp-plan-item-delete')
 
-    def fill_details(self, *, service_date=None, service_time=None, ward=None,
-                      location=None, conducting_leader=None, status=None):
+    # One optional kwarg per form field is clearer here than bundling them into a
+    # dict/dataclass for a test helper.
+    def fill_details(self, *, service_date=None, service_time=None,  # pylint: disable=too-many-arguments
+                      ward=None, location=None, conducting_leader=None, status=None):
         fields = {
             "#bpServiceDate": service_date,
             "#bpServiceTime": service_time,

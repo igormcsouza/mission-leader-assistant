@@ -1,4 +1,5 @@
 """Covers the ward name and per-profile title/subtitle settings (commit 496892f)."""
+# pylint: disable=missing-function-docstring
 from pages.settings_modal import SettingsModal
 
 

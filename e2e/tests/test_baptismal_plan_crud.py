@@ -1,6 +1,7 @@
 """Covers the Baptismal Plan (Planejamento Batismal) CRUD feature (commit 6107848):
 create/edit/delete plans, candidates, and reload persistence.
 """
+# pylint: disable=missing-function-docstring
 from fixtures.data import seed_baptismal_plan
 from pages.baptismal_plan_page import BaptismalPlanPage
 from pages.calendar_page import CalendarPage

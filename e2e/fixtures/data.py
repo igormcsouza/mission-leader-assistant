@@ -27,7 +27,9 @@ def seed_baptismal_plan(request_context, base_url, payload=None):
     Bypasses the UI for tests that need pre-existing plans (e.g. switching between
     multiple plans) without depending on the create-plan flow under test elsewhere.
     """
-    create_response = request_context.post(f"{base_url}/api/baptismal-plans", headers=USER_HEADERS, data={})
+    create_response = request_context.post(
+        f"{base_url}/api/baptismal-plans", headers=USER_HEADERS, data={}
+    )
     assert create_response.ok, create_response.text()
     plan = create_response.json()["plan"]
     if payload:

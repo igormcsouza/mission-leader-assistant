@@ -1,4 +1,5 @@
 """Page object for the settings modal (#settingsModal)."""
+# pylint: disable=missing-function-docstring
 
 
 class SettingsModal:

@@ -1,5 +1,6 @@
 """Covers the calendar PNG export (`#downloadBtn`), a pure-canvas client-side feature
 with no server/network dependency."""
+# pylint: disable=missing-function-docstring
 import re
 
 

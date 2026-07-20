@@ -5,15 +5,19 @@ is what makes `fixtures` and `pages` importable as top-level packages below.
 """
 import pytest
 
-from fixtures.data import reset_data  # noqa: F401  (re-exported as an autouse fixture)
-from fixtures.server import live_server  # noqa: F401  (re-exported for direct use in tests)
+# Re-exported so pytest can discover them as fixtures; also used directly below.
+from fixtures.data import reset_data  # pylint: disable=unused-import
+from fixtures.server import live_server  # pylint: disable=unused-import
 from pages.baptismal_plan_page import BaptismalPlanPage
 from pages.calendar_page import CalendarPage
 from pages.side_drawer import SideDrawer
 
 
 @pytest.fixture
-def calendar_page(reset_data, live_server, page):  # pylint: disable=unused-argument
+# pytest fixtures conventionally shadow their own imported names; that's the
+# whole mechanism, not a real name collision.
+# pylint: disable=redefined-outer-name,unused-argument
+def calendar_page(reset_data, live_server, page):
     """Load the app and return once dev-mode bootstrap has landed on the calendar view.
 
     Depends explicitly on `reset_data` (rather than relying on its autouse ordering)
@@ -27,7 +31,7 @@ def calendar_page(reset_data, live_server, page):  # pylint: disable=unused-argu
 
 
 @pytest.fixture
-def baptismal_plan_page(calendar_page):
+def baptismal_plan_page(calendar_page):  # pylint: disable=redefined-outer-name
     """Navigate from the calendar view into the baptismal plan view via the side drawer."""
     calendar_page.navigate_to("/baptismal-plan")
     calendar_page.page.wait_for_selector("#baptismalPlanView:not(.hidden)")
@@ -35,7 +39,7 @@ def baptismal_plan_page(calendar_page):
 
 
 @pytest.fixture
-def side_drawer(calendar_page):
+def side_drawer(calendar_page):  # pylint: disable=redefined-outer-name
     """Return a SideDrawer bound to the same page as `calendar_page`."""
     return SideDrawer(calendar_page.page)
 

@@ -1,6 +1,7 @@
 """Small standalone UI facts: dark theme (commit 552e70d, static CSS only — no toggle
 exists in the current UI) and favicon/branding (commit 857dded).
 """
+# pylint: disable=missing-function-docstring
 
 
 def test_dark_theme_background_and_form_controls(calendar_page):

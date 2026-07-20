@@ -4,6 +4,7 @@ saving both name slots, and the fixed/non-editable Monday "PDAY" cell.
 Week 2 is used throughout because it is guaranteed to contain real (non-padding)
 calendar days for any month (see CalendarPage docstring).
 """
+# pylint: disable=missing-function-docstring
 from datetime import date
 
 from fixtures.data import get_calendar_payload
@@ -51,6 +52,8 @@ def test_empty_padding_cells_render_without_inputs(calendar_page, context, live_
         if cell["day_number"] is None and cell["day_of_week"] != "Monday"
     )
 
-    dom_cell = calendar_page.day_cell(empty_cell["day_of_week"], week_number=empty_cell["week_number"])
+    dom_cell = calendar_page.day_cell(
+        empty_cell["day_of_week"], week_number=empty_cell["week_number"]
+    )
     assert dom_cell.locator(".empty-day").is_visible()
     assert dom_cell.locator("input").count() == 0

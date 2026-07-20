@@ -1,4 +1,5 @@
 """Page object for the side navigation drawer (#sideDrawer)."""
+# pylint: disable=missing-function-docstring
 
 
 class SideDrawer:
