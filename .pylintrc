@@ -1,2 +1,2 @@
 [MAIN]
-init-hook='import sys; sys.path.insert(0, "src")'
+init-hook='import sys; sys.path.insert(0, "src"); sys.path.insert(0, "e2e")'

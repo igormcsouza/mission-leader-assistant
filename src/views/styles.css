@@ -869,14 +869,14 @@ tbody td.week-cell {
 .bp-editor-area {
   flex: 1;
   min-width: 0;
-  padding: 24px 380px;
+  padding: 84px 380px 24px;
   overflow-y: auto;
   height: 100%;
 }
 
 @media (max-width: 1400px) {
   .bp-editor-area {
-    padding: 24px 40px;
+    padding: 84px 40px 24px;
   }
 }
 
