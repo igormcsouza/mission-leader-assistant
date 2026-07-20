@@ -6,14 +6,9 @@ credentials needed, login is auto-bypassed).
 
 ## Install
 
-Uses [`uv`](https://docs.astral.sh/uv/) for package management:
-
-```bash
-uv pip install --system -r requirements.txt -r e2e/requirements.txt
-playwright install --with-deps chromium
-```
-
-Or, for an isolated local virtual environment:
+Uses [`uv`](https://docs.astral.sh/uv/) for package management. Most Linux distros
+(and GitHub Actions runners) mark the system Python as externally managed, so create
+a venv first rather than installing with `--system`:
 
 ```bash
 uv venv
@@ -24,7 +19,7 @@ playwright install --with-deps chromium
 
 ## Run
 
-From the repo root:
+From the repo root (with the venv above activated):
 
 ```bash
 pytest e2e/tests -v
